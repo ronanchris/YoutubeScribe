@@ -43,6 +43,39 @@ export default function AcceptInvitationPage() {
   // Get the token from the URL query
   const [, params] = useRoute('/accept-invitation');
   const [location, setLocation] = useLocation();
+  
+  // Extract token on initial load directly from window.location
+  useEffect(() => {
+    const currentUrl = window.location.href;
+    console.log('Full URL:', currentUrl);
+    
+    const tokenMatch = currentUrl.match(/[?&]token=([^&]*)/);
+    if (tokenMatch && tokenMatch[1]) {
+      const directToken = decodeURIComponent(tokenMatch[1]);
+      console.log('Token extracted directly:', directToken);
+      setToken(directToken);
+      
+      // Validate the token immediately
+      const validateToken = async (tokenToValidate: string) => {
+        try {
+          const response = await validateInvitationToken(tokenToValidate);
+          if (response.valid) {
+            setTokenIsValid(true);
+            setUsername(response.username || '');
+          } else {
+            setTokenIsValid(false);
+            setValidationError(response.message || 'Invalid invitation token');
+          }
+        } catch (error) {
+          setTokenIsValid(false);
+          setValidationError('Error validating invitation token');
+          console.error('Token validation error:', error);
+        }
+      };
+      
+      validateToken(directToken);
+    }
+  }, []);
   const { toast } = useToast();
   
   // Form setup

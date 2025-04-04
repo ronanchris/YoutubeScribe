@@ -166,18 +166,27 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUserByInvitationToken(token: string): Promise<User | undefined> {
-    const now = new Date();
+    console.log(`Looking up user with invitation token: ${token}`);
+    
+    // First just find the user with the token, regardless of expiry
     const [user] = await db
       .select()
       .from(users)
-      .where(
-        and(
-          eq(users.invitationToken, token),
-          // Ensure token has not expired
-          // @ts-ignore - this condition is fine for date comparison
-          db.sql`${users.tokenExpiry} > ${now}`
-        )
-      );
+      .where(eq(users.invitationToken, token));
+    
+    if (!user) {
+      console.log('No user found with this token');
+      return undefined;
+    }
+    
+    console.log(`Found user ID: ${user.id} with token`);
+    
+    // Now check if the token has expired
+    const now = new Date();
+    if (user.tokenExpiry && now > user.tokenExpiry) {
+      console.log(`Token expired at ${user.tokenExpiry}, current time is ${now}`);
+      return user; // Still return the user, let the route handle expiry messaging
+    }
     
     return user;
   }

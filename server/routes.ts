@@ -369,8 +369,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ valid: false, message: "Token is required" });
       }
       
+      console.log("Validating token:", token);
+      
       // Get the user with this token
       const user = await storage.getUserByInvitationToken(token);
+      console.log("User found with token:", user ? `User ID: ${user.id}` : "No user found");
+      
       if (!user) {
         return res.json({ valid: false, message: "Invalid or expired invitation" });
       }
