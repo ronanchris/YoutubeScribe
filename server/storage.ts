@@ -1,13 +1,14 @@
 import { 
-  users, type User, type InsertUser,
+  users, type User, type InsertUser, type InviteUser,
   summaries, type Summary, type InsertSummary,
   screenshots, type Screenshot, type InsertScreenshot,
   type SummaryWithScreenshots
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, isNull } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { randomBytes } from "crypto";
 
 // Storage interface definition
 export interface IStorage {
@@ -22,6 +23,12 @@ export interface IStorage {
   deleteUser(id: number): Promise<boolean>;
   promoteToAdmin(id: number): Promise<User | undefined>;
   demoteFromAdmin(id: number): Promise<User | undefined>;
+  
+  // Invitation operations
+  createInvitation(inviteData: InviteUser): Promise<{ user: User; token: string }>;
+  getUserByInvitationToken(token: string): Promise<User | undefined>;
+  updateUserPassword(id: number, newPassword: string): Promise<User | undefined>;
+  invalidateInvitationToken(userId: number): Promise<boolean>;
   
   // Summary operations
   getAllSummaries(): Promise<Summary[]>;
@@ -130,6 +137,86 @@ export class DatabaseStorage implements IStorage {
     }
     
     return this.updateUser(id, { isAdmin: false });
+  }
+
+  // Invitation operations
+  async createInvitation(inviteData: InviteUser): Promise<{ user: User; token: string }> {
+    // Generate a random token
+    const token = randomBytes(32).toString('hex');
+    
+    // Set token expiry to 7 days from now
+    const tokenExpiry = new Date();
+    tokenExpiry.setDate(tokenExpiry.getDate() + 7);
+    
+    // Create a temporary password (will be required to change on first login)
+    const temporaryPassword = randomBytes(12).toString('hex');
+    
+    // Create the user with invitation token
+    const [user] = await db.insert(users).values({
+      username: inviteData.email, // Use email as username initially
+      password: temporaryPassword, // Will be hashed in the auth service before insertion
+      isAdmin: inviteData.isAdmin,
+      invitationToken: token,
+      tokenExpiry,
+      isPasswordChangeRequired: true,
+    }).returning();
+    
+    console.log(`Created invitation for user ID: ${user.id} with token`);
+    return { user, token };
+  }
+  
+  async getUserByInvitationToken(token: string): Promise<User | undefined> {
+    const now = new Date();
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.invitationToken, token),
+          // Ensure token has not expired
+          // @ts-ignore - this condition is fine for date comparison
+          db.sql`${users.tokenExpiry} > ${now}`
+        )
+      );
+    
+    return user;
+  }
+  
+  async updateUserPassword(id: number, newPassword: string): Promise<User | undefined> {
+    try {
+      const [updatedUser] = await db
+        .update(users)
+        .set({ 
+          password: newPassword, // Will be hashed in the auth service before update
+          isPasswordChangeRequired: false,
+          invitationToken: null,
+          tokenExpiry: null
+        })
+        .where(eq(users.id, id))
+        .returning();
+      
+      return updatedUser;
+    } catch (error) {
+      console.error('Error updating user password:', error);
+      return undefined;
+    }
+  }
+  
+  async invalidateInvitationToken(userId: number): Promise<boolean> {
+    try {
+      await db
+        .update(users)
+        .set({ 
+          invitationToken: null,
+          tokenExpiry: null
+        })
+        .where(eq(users.id, userId));
+      
+      return true;
+    } catch (error) {
+      console.error('Error invalidating invitation token:', error);
+      return false;
+    }
   }
 
   // Summary operations

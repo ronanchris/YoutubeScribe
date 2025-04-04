@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { getUsers, createUser, deleteUser, promoteToAdmin, demoteFromAdmin } from "@/lib/api";
+import { getUsers, createUser, deleteUser, promoteToAdmin, demoteFromAdmin, createInvitation } from "@/lib/api";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -12,7 +12,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -46,7 +45,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, UserPlus, Shield, ShieldOff, Trash2 } from "lucide-react";
+import { Loader2, UserPlus, Shield, ShieldOff, Trash2, Mail, Check, Copy } from "lucide-react";
 
 // Form schema for creating a new user
 const formSchema = z.object({
@@ -59,13 +58,25 @@ const formSchema = z.object({
   isAdmin: z.boolean().default(false),
 });
 
+// Form schema for sending invitations
+const inviteFormSchema = z.object({
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  isAdmin: z.boolean().default(false),
+});
+
 type FormValues = z.infer<typeof formSchema>;
+type InviteFormValues = z.infer<typeof inviteFormSchema>;
 
 export default function AdminPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [invitationLink, setInvitationLink] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   // If user isn't an admin, redirect to home
   if (user && !user.isAdmin) {
@@ -78,6 +89,15 @@ export default function AdminPage() {
     defaultValues: {
       username: "",
       password: "",
+      isAdmin: false,
+    },
+  });
+  
+  // Invitation form setup
+  const inviteForm = useForm<InviteFormValues>({
+    resolver: zodResolver(inviteFormSchema),
+    defaultValues: {
+      email: "",
       isAdmin: false,
     },
   });
@@ -165,6 +185,27 @@ export default function AdminPage() {
       });
     },
   });
+  
+  // Mutation to create an invitation
+  const createInvitationMutation = useMutation({
+    mutationFn: createInvitation,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setInvitationLink(data.invitationLink);
+      inviteForm.reset();
+      toast({
+        title: "Invitation created",
+        description: "The invitation has been created successfully. Copy the link to share with the user.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to create invitation",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Form submission handler
   function onSubmit(values: FormValues) {
@@ -186,6 +227,34 @@ export default function AdminPage() {
   // Handle user demotion
   function handleDemoteUser(id: number) {
     demoteFromAdminMutation.mutate(id);
+  }
+  
+  // Handle invitation form submission
+  function onInviteSubmit(values: InviteFormValues) {
+    // Pass the values directly to the API
+    createInvitationMutation.mutate(values);
+  }
+  
+  // Handle copying invitation link to clipboard
+  function copyInvitationLink() {
+    if (invitationLink) {
+      navigator.clipboard.writeText(invitationLink)
+        .then(() => {
+          setLinkCopied(true);
+          toast({
+            title: "Link copied",
+            description: "The invitation link has been copied to your clipboard.",
+          });
+          setTimeout(() => setLinkCopied(false), 3000); // Reset after 3 seconds
+        })
+        .catch(() => {
+          toast({
+            title: "Failed to copy",
+            description: "Could not copy to clipboard. Please manually select and copy the link.",
+            variant: "destructive",
+          });
+        });
+    }
   }
 
   // Show loading state
@@ -224,83 +293,174 @@ export default function AdminPage() {
             <CardTitle>User Management</CardTitle>
             <CardDescription>Manage users and their permissions.</CardDescription>
           </div>
-          <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add User
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New User</DialogTitle>
-                <DialogDescription>
-                  Create a new user account. Users can access all summaries and create new ones.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="isAdmin"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>Admin User</FormLabel>
-                          <FormDescription>
-                            Admin users can manage other users and access all content.
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button
-                      type="submit"
-                      disabled={createUserMutation.isPending}
-                    >
-                      {createUserMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <div className="flex gap-2">
+            <Dialog open={isInviteOpen} onOpenChange={(open) => {
+                setIsInviteOpen(open);
+                if (!open) setInvitationLink(null);
+              }}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Mail className="mr-2 h-4 w-4" />
+                  Invite User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Invite a New User</DialogTitle>
+                  <DialogDescription>
+                    Create an invitation link to share with a new user. They will set their own password.
+                  </DialogDescription>
+                </DialogHeader>
+                {invitationLink ? (
+                  <div className="space-y-4">
+                    <div className="p-3 bg-muted rounded-md">
+                      <p className="text-sm break-all">{invitationLink}</p>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={copyInvitationLink}
+                        variant="default"
+                        className="gap-2"
+                      >
+                        {linkCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        {linkCopied ? "Copied" : "Copy Link"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Form {...inviteForm}>
+                    <form onSubmit={inviteForm.handleSubmit(onInviteSubmit)} className="space-y-4">
+                      <FormField
+                        control={inviteForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="email" placeholder="user@example.com" />
+                            </FormControl>
+                            <FormDescription>
+                              This will be used as the username for the new account.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={inviteForm.control}
+                        name="isAdmin"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Admin User</FormLabel>
+                              <FormDescription>
+                                Admin users can manage other users and access all content.
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      <DialogFooter>
+                        <Button
+                          type="submit"
+                          disabled={createInvitationMutation.isPending}
+                        >
+                          {createInvitationMutation.isPending && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          Create Invitation
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                )}
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New User</DialogTitle>
+                  <DialogDescription>
+                    Create a new user account. Users can access all summaries and create new ones.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                      Create User
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="isAdmin"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Admin User</FormLabel>
+                            <FormDescription>
+                              Admin users can manage other users and access all content.
+                            </FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter>
+                      <Button
+                        type="submit"
+                        disabled={createUserMutation.isPending}
+                      >
+                        {createUserMutation.isPending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Create User
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>

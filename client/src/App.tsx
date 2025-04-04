@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import History from "@/pages/history";
 import AuthPage from "@/pages/auth-page";
 import AdminPage from "@/pages/admin";
+import AcceptInvitationPage from "@/pages/accept-invitation";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 
@@ -22,6 +23,7 @@ function Router() {
           <ProtectedRoute path="/history" component={History} />
           <ProtectedRoute path="/admin" component={AdminPage} adminOnly={true} />
           <Route path="/auth" component={AuthPage} />
+          <Route path="/accept-invitation" component={AcceptInvitationPage} />
           <Route component={NotFound} />
         </Switch>
       </div>

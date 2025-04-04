@@ -1,4 +1,4 @@
-import { SummaryWithScreenshots, YoutubeUrlInput, User, AdminInsertUser, UpdateUser } from "@shared/schema";
+import { SummaryWithScreenshots, YoutubeUrlInput, User, AdminInsertUser, UpdateUser, InviteUser } from "@shared/schema";
 import { apiRequest } from "./queryClient";
 
 // Create a new summary from a YouTube URL
@@ -51,5 +51,21 @@ export async function promoteToAdmin(id: number): Promise<Omit<User, "password">
 
 export async function demoteFromAdmin(id: number): Promise<Omit<User, "password">> {
   const response = await apiRequest("POST", `/api/admin/users/${id}/demote`);
+  return response.json();
+}
+
+// Invitation API functions
+export async function createInvitation(data: InviteUser): Promise<{ user: Omit<User, "password">; invitationLink: string }> {
+  const response = await apiRequest("POST", "/api/admin/invitations", data);
+  return response.json();
+}
+
+export async function validateInvitationToken(token: string): Promise<{ valid: boolean; username?: string; message?: string }> {
+  const response = await apiRequest("GET", `/api/validate-invitation?token=${encodeURIComponent(token)}`);
+  return response.json();
+}
+
+export async function acceptInvitation(token: string, newPassword: string): Promise<User> {
+  const response = await apiRequest("POST", "/api/accept-invitation", { token, newPassword });
   return response.json();
 }

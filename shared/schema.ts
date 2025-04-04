@@ -7,6 +7,9 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   isAdmin: boolean("is_admin").notNull().default(false),
+  invitationToken: text("invitation_token"),
+  tokenExpiry: timestamp("token_expiry"),
+  isPasswordChangeRequired: boolean("is_password_change_required").notNull().default(false),
 });
 
 // YouTube summary schema
@@ -46,6 +49,12 @@ export const adminInsertUserSchema = createInsertSchema(users).pick({
   isAdmin: true,
 });
 
+// Invitation user schema for admin to create new users with invitations
+export const inviteUserSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  isAdmin: z.boolean().default(false),
+});
+
 export const insertSummarySchema = createInsertSchema(summaries).omit({
   id: true,
   createdAt: true,
@@ -67,6 +76,7 @@ export const youtubeUrlSchema = z.object({
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type AdminInsertUser = z.infer<typeof adminInsertUserSchema>;
+export type InviteUser = z.infer<typeof inviteUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // Schema for user updates from admin panel

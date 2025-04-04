@@ -1,11 +1,11 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import type { User } from "@shared/schema";
+import type { User, InviteUser } from "@shared/schema";
 
 // Declare custom namespace for express-session
 declare module "express-session" {
@@ -24,6 +24,9 @@ declare global {
       username: string;
       password: string;
       isAdmin: boolean;
+      invitationToken?: string | null;
+      tokenExpiry?: Date | null;
+      isPasswordChangeRequired?: boolean;
     }
   }
 }
@@ -32,7 +35,7 @@ declare global {
 const scryptAsync = promisify(scrypt);
 
 // Hash a password with a salt
-async function hashPassword(password: string) {
+export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
@@ -44,6 +47,22 @@ async function comparePasswords(supplied: string, stored: string) {
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+
+// Middleware to ensure a user is authenticated
+export function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: "Unauthorized: Please login" });
+}
+
+// Middleware to ensure a user is an admin
+export function ensureAdmin(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated() && req.user?.isAdmin) {
+    return next();
+  }
+  res.status(403).json({ message: "Forbidden: Admin access required" });
 }
 
 // Setup authentication for the Express app
@@ -145,4 +164,6 @@ export function setupAuth(app: Express) {
     }
     res.json(req.user);
   });
+  
+  // Invitation endpoints are now handled in routes.ts
 }
