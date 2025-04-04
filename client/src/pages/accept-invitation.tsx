@@ -77,8 +77,14 @@ export default function AcceptInvitationPage() {
 
   // Effect to get and validate the token from the URL
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.split('?')[1]);
+    // More robust URL parsing
+    const queryString = location.includes('?') ? location.split('?')[1] : '';
+    const searchParams = new URLSearchParams(queryString);
     const tokenFromUrl = searchParams.get('token');
+    
+    console.log('URL location:', location);
+    console.log('Query string:', queryString);
+    console.log('Token from URL:', tokenFromUrl);
     
     if (!tokenFromUrl) {
       setTokenIsValid(false);
@@ -150,7 +156,7 @@ export default function AcceptInvitationPage() {
           </CardContent>
           <CardFooter className="flex justify-center">
             <Button asChild>
-              <Link href="/auth">Go to Login</Link>
+              <Link to="/auth">Go to Login</Link>
             </Button>
           </CardFooter>
         </Card>
