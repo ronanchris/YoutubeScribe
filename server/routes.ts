@@ -94,40 +94,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 5. Save everything to storage
       console.log("Saving to storage...");
-      try {
-        // Try to save with userId
-        const newSummary = await storage.createSummaryWithScreenshots(
-          {
-            ...summaryData,
-            userId: req.user!.id // Associate summary with the current user
-          },
-          screenshots
-        );
-        console.log("Saved successfully with ID:", newSummary.id);
-        
-        // 6. Verify the summary was stored properly
-        const allSummaries = await storage.getAllSummariesWithScreenshots();
-        console.log(`Total summaries in storage: ${allSummaries.length}`);
-        
-        // Return the summary
-        res.status(201).json(newSummary);
-      } catch (error) {
-        // If userId field doesn't exist yet, save without it
-        console.error("Error saving with userId, attempting without:", error);
-        
-        const newSummary = await storage.createSummaryWithScreenshots(
-          summaryData,
-          screenshots
-        );
-        console.log("Saved successfully with ID:", newSummary.id);
-        
-        // 6. Verify the summary was stored properly
-        const allSummaries = await storage.getAllSummariesWithScreenshots();
-        console.log(`Total summaries in storage: ${allSummaries.length}`);
-        
-        // Return the summary
-        res.status(201).json(newSummary);
-      }
+      // The error handling for userId is now in storage.ts
+      const newSummary = await storage.createSummaryWithScreenshots(
+        {
+          ...summaryData,
+          userId: req.user!.id // Associate summary with the current user
+        },
+        screenshots
+      );
+      console.log("Saved successfully with ID:", newSummary.id);
+      
+      // 6. Verify the summary was stored properly
+      const allSummaries = await storage.getAllSummariesWithScreenshots();
+      console.log(`Total summaries in storage: ${allSummaries.length}`);
+      
+      // Return the summary
+      res.status(201).json(newSummary);
     } catch (error) {
       console.error("Error generating summary:", error);
       

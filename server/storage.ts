@@ -232,19 +232,36 @@ export class DatabaseStorage implements IStorage {
 
   // Summary operations
   async getAllSummaries(): Promise<Summary[]> {
-    return db.select().from(summaries).orderBy(desc(summaries.createdAt));
+    try {
+      return await db.select().from(summaries).orderBy(desc(summaries.createdAt));
+    } catch (error) {
+      console.error('Error getting all summaries:', error);
+      return [];
+    }
   }
   
   async getUserSummaries(userId: number): Promise<Summary[]> {
-    // If we don't have a userId column yet, return all summaries for now
     try {
-      return db.select()
-        .from(summaries)
-        .where(eq(summaries.userId, userId))
-        .orderBy(desc(summaries.createdAt));
+      // Try to query by userId
+      try {
+        // First check if userId column exists
+        const result = await db.select()
+          .from(summaries)
+          .where(eq(summaries.userId, userId))
+          .orderBy(desc(summaries.createdAt));
+        
+        return result;
+      } catch (error) {
+        console.error('Error filtering by userId, column might not exist:', error);
+        
+        // If we get here, the column doesn't exist or some other error occurred
+        // Return all summaries as a fallback
+        console.log('Falling back to returning all summaries');
+        return await db.select().from(summaries).orderBy(desc(summaries.createdAt));
+      }
     } catch (error) {
-      console.error('Error filtering summaries by userId, returning all summaries instead:', error);
-      return this.getAllSummaries();
+      console.error('Error getting user summaries:', error);
+      return [];
     }
   }
 
@@ -300,32 +317,60 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createSummary(insertSummary: InsertSummary): Promise<Summary> {
-    const [summary] = await db.insert(summaries).values(insertSummary).returning();
-    console.log(`Created summary with ID: ${summary.id}`);
-    return summary;
+    try {
+      // Check if userId field exists and handle it if not
+      let finalValues = { ...insertSummary };
+      
+      if ('userId' in insertSummary) {
+        try {
+          const [summary] = await db.insert(summaries).values(finalValues).returning();
+          console.log(`Created summary with ID: ${summary.id} and userId: ${insertSummary.userId}`);
+          return summary;
+        } catch (error) {
+          console.error('Error inserting summary with userId, trying without:', error);
+          
+          // If userId column doesn't exist, remove it from the insert
+          const { userId, ...valuesWithoutUserId } = finalValues;
+          finalValues = valuesWithoutUserId;
+        }
+      }
+      
+      // Try again without userId if needed
+      const [summary] = await db.insert(summaries).values(finalValues).returning();
+      console.log(`Created summary with ID: ${summary.id}`);
+      return summary;
+    } catch (error) {
+      console.error('Error creating summary:', error);
+      throw error; // Rethrow so the caller can handle it
+    }
   }
 
   async createSummaryWithScreenshots(
     insertSummary: InsertSummary, 
     insertScreenshots: InsertScreenshot[]
   ): Promise<SummaryWithScreenshots> {
-    console.log('Creating summary with screenshots...');
-    
-    // Create summary
-    const summary = await this.createSummary(insertSummary);
-    
-    // Create screenshots with the correct summaryId
-    const screenshots = await Promise.all(
-      insertScreenshots.map(screenshot => 
-        this.createScreenshot({ 
-          ...screenshot, 
-          summaryId: summary.id 
-        })
-      )
-    );
-    
-    console.log(`Created summary with ${screenshots.length} screenshots, ID: ${summary.id}`);
-    return { ...summary, screenshots };
+    try {
+      console.log('Creating summary with screenshots...');
+      
+      // Create summary
+      const summary = await this.createSummary(insertSummary);
+      
+      // Create screenshots with the correct summaryId
+      const screenshots = await Promise.all(
+        insertScreenshots.map(screenshot => 
+          this.createScreenshot({ 
+            ...screenshot, 
+            summaryId: summary.id 
+          })
+        )
+      );
+      
+      console.log(`Created summary with ${screenshots.length} screenshots, ID: ${summary.id}`);
+      return { ...summary, screenshots };
+    } catch (error) {
+      console.error('Error creating summary with screenshots:', error);
+      throw error; // Rethrow so the caller can handle it
+    }
   }
 
   async deleteSummary(id: number): Promise<boolean> {
