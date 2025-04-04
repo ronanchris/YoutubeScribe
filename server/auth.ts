@@ -23,6 +23,7 @@ declare global {
       id: number;
       username: string;
       password: string;
+      isAdmin: boolean;
     }
   }
 }
@@ -103,10 +104,15 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Username already exists");
       }
 
+      // Get all users to check if this is the first user (will be admin)
+      const allUsers = await storage.getAllUsers();
+      const isFirstUser = allUsers.length === 0;
+
       // Create the user with a hashed password
       const user = await storage.createUser({
         ...req.body,
         password: await hashPassword(req.body.password),
+        isAdmin: isFirstUser, // First user becomes admin
       });
 
       // Log the user in

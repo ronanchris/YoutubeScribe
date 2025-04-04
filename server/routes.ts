@@ -8,6 +8,7 @@ import { extractScreenshots } from "./services/screenshot";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
+import { updateUserSchema, adminInsertUserSchema } from "@shared/schema";
 
 // Middleware to ensure user is authenticated
 function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -15,6 +16,14 @@ function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
     return next();
   }
   res.status(401).json({ message: "Unauthorized" });
+}
+
+// Middleware to ensure user is an admin
+function ensureAdmin(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated() && req.user && req.user.isAdmin) {
+    return next();
+  }
+  res.status(403).json({ message: "Forbidden: Admin privileges required" });
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -127,6 +136,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting summary:", error);
       res.status(500).json({ message: "Failed to delete summary" });
+    }
+  });
+
+  // Admin routes - require admin privileges
+  
+  // Get all users - admin only
+  app.get("/api/admin/users", ensureAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Don't send passwords to client
+      const sanitizedUsers = users.map(({ password, ...user }) => user);
+      res.json(sanitizedUsers);
+    } catch (error) {
+      console.error("Error getting users:", error);
+      res.status(500).json({ message: "Failed to retrieve users" });
+    }
+  });
+  
+  // Create a new user - admin only
+  app.post("/api/admin/users", ensureAdmin, async (req, res) => {
+    try {
+      const userData = adminInsertUserSchema.parse(req.body);
+      const newUser = await storage.createUser(userData);
+      
+      // Don't send password back to client
+      const { password, ...sanitizedUser } = newUser;
+      res.status(201).json(sanitizedUser);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to create user", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+  
+  // Update a user - admin only
+  app.patch("/api/admin/users/:id", ensureAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const updateData = updateUserSchema.parse(req.body);
+      const updatedUser = await storage.updateUser(id, updateData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't send password back to client
+      const { password, ...sanitizedUser } = updatedUser;
+      res.json(sanitizedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to update user", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+  
+  // Delete a user - admin only
+  app.delete("/api/admin/users/:id", ensureAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      // Make sure admin can't delete themselves
+      if (id === req.user?.id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+      
+      const success = await storage.deleteUser(id);
+      if (!success) {
+        return res.status(404).json({ message: "User not found or cannot be deleted" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+  
+  // Promote a user to admin - admin only
+  app.post("/api/admin/users/:id/promote", ensureAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const updatedUser = await storage.promoteToAdmin(id);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't send password back to client
+      const { password, ...sanitizedUser } = updatedUser;
+      res.json(sanitizedUser);
+    } catch (error) {
+      console.error("Error promoting user:", error);
+      res.status(500).json({ message: "Failed to promote user" });
+    }
+  });
+  
+  // Demote a user from admin - admin only
+  app.post("/api/admin/users/:id/demote", ensureAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      // Make sure admin can't demote themselves
+      if (id === req.user?.id) {
+        return res.status(400).json({ message: "Cannot demote yourself" });
+      }
+      
+      const updatedUser = await storage.demoteFromAdmin(id);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found or cannot be demoted" });
+      }
+      
+      // Don't send password back to client
+      const { password, ...sanitizedUser } = updatedUser;
+      res.json(sanitizedUser);
+    } catch (error) {
+      console.error("Error demoting user:", error);
+      res.status(500).json({ message: "Failed to demote user" });
     }
   });
 

@@ -6,6 +6,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  isAdmin: boolean("is_admin").notNull().default(false),
 });
 
 // YouTube summary schema
@@ -35,6 +36,14 @@ export const screenshots = pgTable("screenshots", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  isAdmin: true,
+}).omit({ isAdmin: true }); // Omit isAdmin for regular registration
+
+// Admin version of the insert schema that allows setting isAdmin
+export const adminInsertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
+  isAdmin: true,
 });
 
 export const insertSummarySchema = createInsertSchema(summaries).omit({
@@ -57,7 +66,15 @@ export const youtubeUrlSchema = z.object({
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type AdminInsertUser = z.infer<typeof adminInsertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// Schema for user updates from admin panel
+export const updateUserSchema = z.object({
+  username: z.string().optional(),
+  isAdmin: z.boolean().optional()
+});
+export type UpdateUser = z.infer<typeof updateUserSchema>;
 
 export type InsertSummary = z.infer<typeof insertSummarySchema>;
 export type Summary = typeof summaries.$inferSelect;

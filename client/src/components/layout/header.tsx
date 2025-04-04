@@ -58,6 +58,13 @@ export default function Header() {
               History
             </a>
           </Link>
+          {user?.isAdmin && (
+            <Link href="/admin">
+              <a className={`text-sm font-medium ${location === "/admin" ? "text-primary" : "text-slate-700 hover:text-primary"}`}>
+                Admin
+              </a>
+            </Link>
+          )}
         </nav>
 
         {user && (
