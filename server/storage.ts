@@ -4,7 +4,14 @@ import {
   screenshots, type Screenshot, type InsertScreenshot,
   type SummaryWithScreenshots
 } from "@shared/schema";
+import * as fs from 'fs';
+import * as path from 'path';
 
+// File paths for persistent storage
+const DATA_DIR = './data';
+const STORAGE_FILE = path.join(DATA_DIR, 'storage.json');
+
+// Storage interface definition
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
@@ -25,6 +32,7 @@ export interface IStorage {
   createScreenshot(screenshot: InsertScreenshot): Promise<Screenshot>;
 }
 
+// In-memory storage with file persistence
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private summaries: Map<number, Summary>;
@@ -34,12 +42,97 @@ export class MemStorage implements IStorage {
   private currentScreenshotId: number;
 
   constructor() {
+    // Initialize with default values
     this.users = new Map();
     this.summaries = new Map();
     this.screenshots = new Map();
     this.currentUserId = 1;
     this.currentSummaryId = 1;
     this.currentScreenshotId = 1;
+    
+    // Load data from persistent storage if available
+    this.loadFromDisk();
+  }
+  
+  // Load data from disk if available
+  private loadFromDisk() {
+    try {
+      // Create data directory if it doesn't exist
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+        console.log(`Created data directory: ${DATA_DIR}`);
+        return; // No data file yet
+      }
+      
+      // Check if storage file exists
+      if (!fs.existsSync(STORAGE_FILE)) {
+        console.log('No storage file found, starting with empty storage');
+        return;
+      }
+      
+      // Read and parse storage file
+      const data = fs.readFileSync(STORAGE_FILE, 'utf8');
+      const parsed = JSON.parse(data);
+      
+      // Populate storage from parsed data
+      if (parsed.users) {
+        this.users = new Map(Object.entries(parsed.users).map(([id, user]) => [Number(id), user as User]));
+      }
+      
+      if (parsed.summaries) {
+        this.summaries = new Map(Object.entries(parsed.summaries).map(([id, summary]) => {
+          // Convert createdAt string back to Date
+          const typedSummary = summary as Summary;
+          typedSummary.createdAt = new Date(typedSummary.createdAt);
+          return [Number(id), typedSummary];
+        }));
+      }
+      
+      if (parsed.screenshots) {
+        this.screenshots = new Map(Object.entries(parsed.screenshots).map(([id, screenshot]) => 
+          [Number(id), screenshot as Screenshot]
+        ));
+      }
+      
+      // Set counters for next IDs
+      this.currentUserId = parsed.currentUserId || 1;
+      this.currentSummaryId = parsed.currentSummaryId || 1;
+      this.currentScreenshotId = parsed.currentScreenshotId || 1;
+      
+      console.log('Successfully loaded storage from disk');
+      console.log(`- Loaded ${this.users.size} users`);
+      console.log(`- Loaded ${this.summaries.size} summaries`);
+      console.log(`- Loaded ${this.screenshots.size} screenshots`);
+    } catch (error) {
+      console.error('Error loading from disk:', error);
+      // Continue with empty storage
+    }
+  }
+  
+  // Save data to disk
+  private saveToDisk() {
+    try {
+      // Ensure data directory exists
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+      
+      // Convert Maps to plain objects for JSON serialization
+      const data = {
+        users: Object.fromEntries(this.users),
+        summaries: Object.fromEntries(this.summaries),
+        screenshots: Object.fromEntries(this.screenshots),
+        currentUserId: this.currentUserId,
+        currentSummaryId: this.currentSummaryId,
+        currentScreenshotId: this.currentScreenshotId
+      };
+      
+      // Write to file
+      fs.writeFileSync(STORAGE_FILE, JSON.stringify(data, null, 2));
+      console.log('Successfully saved storage to disk');
+    } catch (error) {
+      console.error('Error saving to disk:', error);
+    }
   }
 
   // User operations
@@ -57,6 +150,7 @@ export class MemStorage implements IStorage {
     const id = this.currentUserId++;
     const user: User = { ...insertUser, id };
     this.users.set(id, user);
+    this.saveToDisk();
     return user;
   }
 
@@ -105,8 +199,17 @@ export class MemStorage implements IStorage {
   async createSummary(insertSummary: InsertSummary): Promise<Summary> {
     const id = this.currentSummaryId++;
     const createdAt = new Date();
-    const summary: Summary = { ...insertSummary, id, createdAt };
+    // Using defaults from the schema
+    const summary: Summary = { 
+      ...insertSummary, 
+      id, 
+      createdAt,
+      videoDuration: insertSummary.videoDuration ?? 0,
+      keyPoints: insertSummary.keyPoints ?? []
+    };
     this.summaries.set(id, summary);
+    this.saveToDisk();
+    console.log(`Created summary with ID: ${id}`);
     return summary;
   }
 
@@ -114,16 +217,24 @@ export class MemStorage implements IStorage {
     insertSummary: InsertSummary, 
     insertScreenshots: InsertScreenshot[]
   ): Promise<SummaryWithScreenshots> {
+    console.log('Creating summary with screenshots...');
     // Create summary
     const summary = await this.createSummary(insertSummary);
     
     // Create screenshots with the correct summaryId
     const screenshots = await Promise.all(
       insertScreenshots.map(screenshot => 
-        this.createScreenshot({ ...screenshot, summaryId: summary.id })
+        this.createScreenshot({ 
+          ...screenshot, 
+          summaryId: summary.id,
+          description: screenshot.description ?? ""
+        })
       )
     );
     
+    console.log(`Created summary with ${screenshots.length} screenshots, ID: ${summary.id}`);
+    console.log('Total summaries in storage:', this.summaries.size);
+    this.saveToDisk();
     return { ...summary, screenshots };
   }
 
@@ -143,6 +254,7 @@ export class MemStorage implements IStorage {
       this.screenshots.delete(screenshot.id);
     }
     
+    this.saveToDisk();
     return true;
   }
 
@@ -155,7 +267,12 @@ export class MemStorage implements IStorage {
 
   async createScreenshot(insertScreenshot: InsertScreenshot): Promise<Screenshot> {
     const id = this.currentScreenshotId++;
-    const screenshot: Screenshot = { ...insertScreenshot, id };
+    // Using the default from the schema
+    const screenshot: Screenshot = { 
+      ...insertScreenshot, 
+      id,
+      description: insertScreenshot.description ?? ""
+    };
     this.screenshots.set(id, screenshot);
     return screenshot;
   }

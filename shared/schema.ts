@@ -15,8 +15,8 @@ export const summaries = pgTable("summaries", {
   videoUrl: text("video_url").notNull(),
   videoTitle: text("video_title").notNull(),
   videoAuthor: text("video_author").notNull(),
-  videoDuration: integer("video_duration"),
-  keyPoints: text("key_points").array(),
+  videoDuration: integer("video_duration").notNull().default(0), // Default to 0 if not provided
+  keyPoints: text("key_points").array().notNull().default([]), // Default to empty array if not provided
   summary: text("summary").notNull(),
   structuredOutline: jsonb("structured_outline").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -28,7 +28,7 @@ export const screenshots = pgTable("screenshots", {
   summaryId: integer("summary_id").notNull(),
   imageUrl: text("image_url").notNull(), // Base64 encoded image for this implementation
   timestamp: integer("timestamp").notNull(), // Screenshot timestamp in seconds
-  description: text("description"), // Auto-generated description of the screenshot content
+  description: text("description").notNull().default(""), // Default empty string if not provided
 });
 
 // Insert schemas
