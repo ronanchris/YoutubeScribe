@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.postgresql
     pkgs.libuuid
     pkgs.pango
     pkgs.cairo
