@@ -45,9 +45,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Validate YouTube URL
       const { url } = youtubeUrlSchema.parse(req.body);
+      console.log("Processing YouTube URL:", url);
       
       // 1. Get video info (title, author, etc.)
       const videoInfo = await getVideoInfo(url);
+      console.log("Got video info:", { title: videoInfo.videoTitle, author: videoInfo.videoAuthor });
       
       // 2. Get video transcript
       const transcript = await getVideoTranscript(url);
@@ -56,18 +58,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Could not extract transcript. The video might not have captions available." 
         });
       }
+      console.log("Got transcript, length:", transcript.length);
       
       // 3. Generate AI summary
+      console.log("Generating summary with OpenAI...");
       const summaryData = await generateSummary(transcript, videoInfo);
+      console.log("Summary generated successfully");
       
       // 4. Extract key screenshots
+      console.log("Extracting screenshots...");
       const screenshots = await extractScreenshots(url);
+      console.log(`Extracted ${screenshots.length} screenshots`);
       
       // 5. Save everything to storage
+      console.log("Saving to storage...");
       const newSummary = await storage.createSummaryWithScreenshots(
         summaryData,
         screenshots
       );
+      console.log("Saved successfully with ID:", newSummary.id);
+      
+      // 6. Verify the summary was stored properly
+      const allSummaries = await storage.getAllSummariesWithScreenshots();
+      console.log(`Total summaries in storage: ${allSummaries.length}`);
       
       res.status(201).json(newSummary);
     } catch (error) {

@@ -3,7 +3,12 @@ import { InsertSummary } from "@shared/schema";
 import { formatTimestamp } from "./screenshot";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "sk-dummy-key-for-development" });
+const openai = new OpenAI({ 
+  apiKey: process.env.OPENAI_API_KEY 
+});
+
+// Log OpenAI configuration status
+console.log("OpenAI client configured with API key:", process.env.OPENAI_API_KEY ? "Valid key provided" : "No key found");
 
 /**
  * Generates a structured summary of a video transcript using OpenAI GPT-4o

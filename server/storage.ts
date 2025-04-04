@@ -68,10 +68,21 @@ export class MemStorage implements IStorage {
 
   async getAllSummariesWithScreenshots(): Promise<SummaryWithScreenshots[]> {
     const allSummaries = await this.getAllSummaries();
+    console.log(`getAllSummariesWithScreenshots: Found ${allSummaries.length} summaries`);
+    
+    if (allSummaries.length === 0) {
+      console.log('Warning: No summaries found in storage!');
+      // Dump current state of storage for debugging
+      console.log('Current storage state:');
+      console.log(`- Summaries map size: ${this.summaries.size}`);
+      console.log(`- Screenshots map size: ${this.screenshots.size}`);
+      return [];
+    }
     
     const results = await Promise.all(
       allSummaries.map(async (summary) => {
         const screenshots = await this.getScreenshotsBySummaryId(summary.id);
+        console.log(`Got ${screenshots.length} screenshots for summary ${summary.id}`);
         return { ...summary, screenshots };
       })
     );
