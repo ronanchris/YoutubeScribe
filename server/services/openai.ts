@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { InsertSummary } from "@shared/schema";
+import { formatTimestamp } from "./screenshot";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "sk-dummy-key-for-development" });
@@ -133,9 +134,4 @@ export async function analyzeScreenshot(
   }
 }
 
-// Helper function to format timestamp as MM:SS
-function formatTimestamp(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
+// We're now using the shared formatTimestamp function from "./screenshot"
