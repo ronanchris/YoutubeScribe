@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { youtubeUrlSchema } from "@shared/schema";
@@ -7,10 +7,22 @@ import { generateSummary } from "./services/openai";
 import { extractScreenshots } from "./services/screenshot";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { setupAuth } from "./auth";
+
+// Middleware to ensure user is authenticated
+function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: "Unauthorized" });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get all summaries
-  app.get("/api/summaries", async (req, res) => {
+  // Set up authentication
+  setupAuth(app);
+
+  // Get all summaries - requires authentication
+  app.get("/api/summaries", ensureAuthenticated, async (req, res) => {
     try {
       const summaries = await storage.getAllSummariesWithScreenshots();
       res.json(summaries);
@@ -20,8 +32,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get a single summary by ID
-  app.get("/api/summaries/:id", async (req, res) => {
+  // Get a single summary by ID - requires authentication
+  app.get("/api/summaries/:id", ensureAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -40,8 +52,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate a new summary from YouTube URL
-  app.post("/api/summaries", async (req, res) => {
+  // Generate a new summary from YouTube URL - requires authentication
+  app.post("/api/summaries", ensureAuthenticated, async (req, res) => {
     try {
       // Validate YouTube URL
       const { url } = youtubeUrlSchema.parse(req.body);
@@ -98,8 +110,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete a summary
-  app.delete("/api/summaries/:id", async (req, res) => {
+  // Delete a summary - requires authentication
+  app.delete("/api/summaries/:id", ensureAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {

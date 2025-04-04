@@ -4,12 +4,11 @@ import {
   screenshots, type Screenshot, type InsertScreenshot,
   type SummaryWithScreenshots
 } from "@shared/schema";
-import * as fs from 'fs';
-import * as path from 'path';
-
-// File paths for persistent storage
-const DATA_DIR = './data';
-const STORAGE_FILE = path.join(DATA_DIR, 'storage.json');
+import { db } from "./db";
+import { eq, desc, and } from "drizzle-orm";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
 // Storage interface definition
 export interface IStorage {
@@ -30,134 +29,46 @@ export interface IStorage {
   // Screenshot operations
   getScreenshotsBySummaryId(summaryId: number): Promise<Screenshot[]>;
   createScreenshot(screenshot: InsertScreenshot): Promise<Screenshot>;
+  
+  // Session store for authentication
+  sessionStore: session.Store;
 }
 
-// In-memory storage with file persistence
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private summaries: Map<number, Summary>;
-  private screenshots: Map<number, Screenshot>;
-  private currentUserId: number;
-  private currentSummaryId: number;
-  private currentScreenshotId: number;
-
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
+  // Session store for authentication
+  sessionStore: session.Store;
+  
   constructor() {
-    // Initialize with default values
-    this.users = new Map();
-    this.summaries = new Map();
-    this.screenshots = new Map();
-    this.currentUserId = 1;
-    this.currentSummaryId = 1;
-    this.currentScreenshotId = 1;
-    
-    // Load data from persistent storage if available
-    this.loadFromDisk();
-  }
-  
-  // Load data from disk if available
-  private loadFromDisk() {
-    try {
-      // Create data directory if it doesn't exist
-      if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-        console.log(`Created data directory: ${DATA_DIR}`);
-        return; // No data file yet
-      }
-      
-      // Check if storage file exists
-      if (!fs.existsSync(STORAGE_FILE)) {
-        console.log('No storage file found, starting with empty storage');
-        return;
-      }
-      
-      // Read and parse storage file
-      const data = fs.readFileSync(STORAGE_FILE, 'utf8');
-      const parsed = JSON.parse(data);
-      
-      // Populate storage from parsed data
-      if (parsed.users) {
-        this.users = new Map(Object.entries(parsed.users).map(([id, user]) => [Number(id), user as User]));
-      }
-      
-      if (parsed.summaries) {
-        this.summaries = new Map(Object.entries(parsed.summaries).map(([id, summary]) => {
-          // Convert createdAt string back to Date
-          const typedSummary = summary as Summary;
-          typedSummary.createdAt = new Date(typedSummary.createdAt);
-          return [Number(id), typedSummary];
-        }));
-      }
-      
-      if (parsed.screenshots) {
-        this.screenshots = new Map(Object.entries(parsed.screenshots).map(([id, screenshot]) => 
-          [Number(id), screenshot as Screenshot]
-        ));
-      }
-      
-      // Set counters for next IDs
-      this.currentUserId = parsed.currentUserId || 1;
-      this.currentSummaryId = parsed.currentSummaryId || 1;
-      this.currentScreenshotId = parsed.currentScreenshotId || 1;
-      
-      console.log('Successfully loaded storage from disk');
-      console.log(`- Loaded ${this.users.size} users`);
-      console.log(`- Loaded ${this.summaries.size} summaries`);
-      console.log(`- Loaded ${this.screenshots.size} screenshots`);
-    } catch (error) {
-      console.error('Error loading from disk:', error);
-      // Continue with empty storage
-    }
-  }
-  
-  // Save data to disk
-  private saveToDisk() {
-    try {
-      // Ensure data directory exists
-      if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-      }
-      
-      // Convert Maps to plain objects for JSON serialization
-      const data = {
-        users: Object.fromEntries(this.users),
-        summaries: Object.fromEntries(this.summaries),
-        screenshots: Object.fromEntries(this.screenshots),
-        currentUserId: this.currentUserId,
-        currentSummaryId: this.currentSummaryId,
-        currentScreenshotId: this.currentScreenshotId
-      };
-      
-      // Write to file
-      fs.writeFileSync(STORAGE_FILE, JSON.stringify(data, null, 2));
-      console.log('Successfully saved storage to disk');
-    } catch (error) {
-      console.error('Error saving to disk:', error);
-    }
+    // Set up PostgreSQL session store
+    const PostgresStore = connectPg(session);
+    this.sessionStore = new PostgresStore({
+      pool, 
+      createTableIfMissing: true
+    });
+    console.log('Database storage initialized');
   }
 
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    this.saveToDisk();
+    const [user] = await db.insert(users).values(insertUser).returning();
+    console.log(`Created user with ID: ${user.id}`);
     return user;
   }
 
   // Summary operations
   async getAllSummaries(): Promise<Summary[]> {
-    return Array.from(this.summaries.values())
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return db.select().from(summaries).orderBy(desc(summaries.createdAt));
   }
 
   async getAllSummariesWithScreenshots(): Promise<SummaryWithScreenshots[]> {
@@ -166,10 +77,6 @@ export class MemStorage implements IStorage {
     
     if (allSummaries.length === 0) {
       console.log('Warning: No summaries found in storage!');
-      // Dump current state of storage for debugging
-      console.log('Current storage state:');
-      console.log(`- Summaries map size: ${this.summaries.size}`);
-      console.log(`- Screenshots map size: ${this.screenshots.size}`);
       return [];
     }
     
@@ -185,7 +92,8 @@ export class MemStorage implements IStorage {
   }
 
   async getSummary(id: number): Promise<Summary | undefined> {
-    return this.summaries.get(id);
+    const [summary] = await db.select().from(summaries).where(eq(summaries.id, id));
+    return summary;
   }
 
   async getSummaryWithScreenshots(id: number): Promise<SummaryWithScreenshots | undefined> {
@@ -197,19 +105,8 @@ export class MemStorage implements IStorage {
   }
 
   async createSummary(insertSummary: InsertSummary): Promise<Summary> {
-    const id = this.currentSummaryId++;
-    const createdAt = new Date();
-    // Using defaults from the schema
-    const summary: Summary = { 
-      ...insertSummary, 
-      id, 
-      createdAt,
-      videoDuration: insertSummary.videoDuration ?? 0,
-      keyPoints: insertSummary.keyPoints ?? []
-    };
-    this.summaries.set(id, summary);
-    this.saveToDisk();
-    console.log(`Created summary with ID: ${id}`);
+    const [summary] = await db.insert(summaries).values(insertSummary).returning();
+    console.log(`Created summary with ID: ${summary.id}`);
     return summary;
   }
 
@@ -218,6 +115,7 @@ export class MemStorage implements IStorage {
     insertScreenshots: InsertScreenshot[]
   ): Promise<SummaryWithScreenshots> {
     console.log('Creating summary with screenshots...');
+    
     // Create summary
     const summary = await this.createSummary(insertSummary);
     
@@ -226,56 +124,43 @@ export class MemStorage implements IStorage {
       insertScreenshots.map(screenshot => 
         this.createScreenshot({ 
           ...screenshot, 
-          summaryId: summary.id,
-          description: screenshot.description ?? ""
+          summaryId: summary.id 
         })
       )
     );
     
     console.log(`Created summary with ${screenshots.length} screenshots, ID: ${summary.id}`);
-    console.log('Total summaries in storage:', this.summaries.size);
-    this.saveToDisk();
     return { ...summary, screenshots };
   }
 
   async deleteSummary(id: number): Promise<boolean> {
-    if (!this.summaries.has(id)) {
+    try {
+      // First delete all associated screenshots
+      await db.delete(screenshots).where(eq(screenshots.summaryId, id));
+      
+      // Then delete the summary
+      const result = await db.delete(summaries).where(eq(summaries.id, id)).returning({ id: summaries.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error deleting summary:', error);
       return false;
     }
-    
-    // Delete the summary
-    this.summaries.delete(id);
-    
-    // Delete all associated screenshots
-    const screenshotsToDelete = Array.from(this.screenshots.values())
-      .filter(screenshot => screenshot.summaryId === id);
-    
-    for (const screenshot of screenshotsToDelete) {
-      this.screenshots.delete(screenshot.id);
-    }
-    
-    this.saveToDisk();
-    return true;
   }
 
   // Screenshot operations
   async getScreenshotsBySummaryId(summaryId: number): Promise<Screenshot[]> {
-    return Array.from(this.screenshots.values())
-      .filter(screenshot => screenshot.summaryId === summaryId)
-      .sort((a, b) => a.timestamp - b.timestamp);
+    return db
+      .select()
+      .from(screenshots)
+      .where(eq(screenshots.summaryId, summaryId))
+      .orderBy(screenshots.timestamp);
   }
 
   async createScreenshot(insertScreenshot: InsertScreenshot): Promise<Screenshot> {
-    const id = this.currentScreenshotId++;
-    // Using the default from the schema
-    const screenshot: Screenshot = { 
-      ...insertScreenshot, 
-      id,
-      description: insertScreenshot.description ?? ""
-    };
-    this.screenshots.set(id, screenshot);
+    const [screenshot] = await db.insert(screenshots).values(insertScreenshot).returning();
     return screenshot;
   }
 }
 
-export const storage = new MemStorage();
+// Create a DatabaseStorage instance for the application
+export const storage = new DatabaseStorage();
