@@ -9,6 +9,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth, ensureAuthenticated, ensureAdmin, hashPassword } from "./auth";
 import { updateUserSchema, adminInsertUserSchema, inviteUserSchema } from "@shared/schema";
+import crypto from "crypto";
 
 // Using auth middleware from auth.ts
 
@@ -330,7 +331,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.invalidateInvitationToken(id); // Clear any existing tokens
       
       // Generate a new token for the existing user instead of creating a new user
-      const crypto = require('crypto');
       const token = crypto.randomBytes(32).toString('hex');
       const tokenExpiry = new Date();
       tokenExpiry.setDate(tokenExpiry.getDate() + 7); // Token valid for 7 days
