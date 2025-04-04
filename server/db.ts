@@ -1,8 +1,8 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from '@shared/schema';
 
-// Set up the database connection pool
+// Set up the database connection
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
@@ -10,7 +10,9 @@ if (!connectionString) {
   process.exit(1);
 }
 
-export const pool = new Pool({ connectionString });
+// Create a postgres client
+const client = postgres(connectionString);
 
 // Create drizzle client
-export const db = drizzle(pool, { schema });
+export const db = drizzle(client, { schema });
+export const pool = client;

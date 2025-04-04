@@ -7,8 +7,7 @@ import {
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { pool } from "./db";
+import createMemoryStore from "memorystore";
 
 // Storage interface definition
 export interface IStorage {
@@ -40,11 +39,10 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
   
   constructor() {
-    // Set up PostgreSQL session store
-    const PostgresStore = connectPg(session);
-    this.sessionStore = new PostgresStore({
-      pool, 
-      createTableIfMissing: true
+    // Set up memory session store for simplicity
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
     });
     console.log('Database storage initialized');
   }
