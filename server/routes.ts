@@ -328,9 +328,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create a new invitation token for the user
       await storage.invalidateInvitationToken(id); // Clear any existing tokens
-      const { token } = await storage.createInvitation({
-        email: user.username,
-        isAdmin: user.isAdmin
+      
+      // Generate a new token for the existing user instead of creating a new user
+      const crypto = require('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
+      const tokenExpiry = new Date();
+      tokenExpiry.setDate(tokenExpiry.getDate() + 7); // Token valid for 7 days
+      
+      // Update the user with the new token
+      await storage.updateUser(id, {
+        invitationToken: token,
+        tokenExpiry,
+        isPasswordChangeRequired: true
       });
       
       // Create the invitation link
