@@ -15,6 +15,7 @@ export const users = pgTable("users", {
 // YouTube summary schema
 export const summaries = pgTable("summaries", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // Add userId to associate summaries with users
   videoId: text("video_id").notNull(),
   videoUrl: text("video_url").notNull(),
   videoTitle: text("video_title").notNull(),

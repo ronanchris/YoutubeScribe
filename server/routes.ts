@@ -27,7 +27,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all summaries - requires authentication
   app.get("/api/summaries", ensureAuthenticated, async (req, res) => {
     try {
-      const summaries = await storage.getAllSummariesWithScreenshots();
+      // ensureAuthenticated guarantees req.user exists
+      const userId = req.user!.id;
+      const summaries = await storage.getUserSummariesWithScreenshots(userId);
       res.json(summaries);
     } catch (error) {
       console.error("Error getting summaries:", error);
@@ -46,6 +48,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const summary = await storage.getSummaryWithScreenshots(id);
       if (!summary) {
         return res.status(404).json({ message: "Summary not found" });
+      }
+      
+      // Check if the summary belongs to the user (if userId exists)
+      if (summary.userId !== undefined && summary.userId !== req.user!.id) {
+        return res.status(403).json({ message: "You don't have permission to access this summary" });
       }
 
       res.json(summary);
@@ -87,17 +94,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 5. Save everything to storage
       console.log("Saving to storage...");
-      const newSummary = await storage.createSummaryWithScreenshots(
-        summaryData,
-        screenshots
-      );
-      console.log("Saved successfully with ID:", newSummary.id);
-      
-      // 6. Verify the summary was stored properly
-      const allSummaries = await storage.getAllSummariesWithScreenshots();
-      console.log(`Total summaries in storage: ${allSummaries.length}`);
-      
-      res.status(201).json(newSummary);
+      try {
+        // Try to save with userId
+        const newSummary = await storage.createSummaryWithScreenshots(
+          {
+            ...summaryData,
+            userId: req.user!.id // Associate summary with the current user
+          },
+          screenshots
+        );
+        console.log("Saved successfully with ID:", newSummary.id);
+        
+        // 6. Verify the summary was stored properly
+        const allSummaries = await storage.getAllSummariesWithScreenshots();
+        console.log(`Total summaries in storage: ${allSummaries.length}`);
+        
+        // Return the summary
+        res.status(201).json(newSummary);
+      } catch (error) {
+        // If userId field doesn't exist yet, save without it
+        console.error("Error saving with userId, attempting without:", error);
+        
+        const newSummary = await storage.createSummaryWithScreenshots(
+          summaryData,
+          screenshots
+        );
+        console.log("Saved successfully with ID:", newSummary.id);
+        
+        // 6. Verify the summary was stored properly
+        const allSummaries = await storage.getAllSummariesWithScreenshots();
+        console.log(`Total summaries in storage: ${allSummaries.length}`);
+        
+        // Return the summary
+        res.status(201).json(newSummary);
+      }
     } catch (error) {
       console.error("Error generating summary:", error);
       
@@ -120,10 +150,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid summary ID" });
       }
+      
+      // First check if the summary exists and belongs to the user
+      const summary = await storage.getSummary(id);
+      if (!summary) {
+        return res.status(404).json({ message: "Summary not found" });
+      }
+      
+      // Check if the summary belongs to the user (if userId exists)
+      if (summary.userId !== undefined && summary.userId !== req.user!.id) {
+        return res.status(403).json({ message: "You don't have permission to delete this summary" });
+      }
 
       const success = await storage.deleteSummary(id);
       if (!success) {
-        return res.status(404).json({ message: "Summary not found" });
+        return res.status(500).json({ message: "Failed to delete summary" });
       }
 
       res.status(204).send();

@@ -33,6 +33,8 @@ export interface IStorage {
   // Summary operations
   getAllSummaries(): Promise<Summary[]>;
   getAllSummariesWithScreenshots(): Promise<SummaryWithScreenshots[]>;
+  getUserSummaries(userId: number): Promise<Summary[]>;
+  getUserSummariesWithScreenshots(userId: number): Promise<SummaryWithScreenshots[]>;
   getSummary(id: number): Promise<Summary | undefined>;
   getSummaryWithScreenshots(id: number): Promise<SummaryWithScreenshots | undefined>;
   createSummary(summary: InsertSummary): Promise<Summary>;
@@ -232,6 +234,19 @@ export class DatabaseStorage implements IStorage {
   async getAllSummaries(): Promise<Summary[]> {
     return db.select().from(summaries).orderBy(desc(summaries.createdAt));
   }
+  
+  async getUserSummaries(userId: number): Promise<Summary[]> {
+    // If we don't have a userId column yet, return all summaries for now
+    try {
+      return db.select()
+        .from(summaries)
+        .where(eq(summaries.userId, userId))
+        .orderBy(desc(summaries.createdAt));
+    } catch (error) {
+      console.error('Error filtering summaries by userId, returning all summaries instead:', error);
+      return this.getAllSummaries();
+    }
+  }
 
   async getAllSummariesWithScreenshots(): Promise<SummaryWithScreenshots[]> {
     const allSummaries = await this.getAllSummaries();
@@ -246,6 +261,24 @@ export class DatabaseStorage implements IStorage {
       allSummaries.map(async (summary) => {
         const screenshots = await this.getScreenshotsBySummaryId(summary.id);
         console.log(`Got ${screenshots.length} screenshots for summary ${summary.id}`);
+        return { ...summary, screenshots };
+      })
+    );
+    
+    return results;
+  }
+  
+  async getUserSummariesWithScreenshots(userId: number): Promise<SummaryWithScreenshots[]> {
+    const userSummaries = await this.getUserSummaries(userId);
+    console.log(`getUserSummariesWithScreenshots: Found ${userSummaries.length} summaries for user ${userId}`);
+    
+    if (userSummaries.length === 0) {
+      return [];
+    }
+    
+    const results = await Promise.all(
+      userSummaries.map(async (summary) => {
+        const screenshots = await this.getScreenshotsBySummaryId(summary.id);
         return { ...summary, screenshots };
       })
     );
