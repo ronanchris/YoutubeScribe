@@ -22,8 +22,8 @@ export default function HistoryCard({ summary }: HistoryCardProps) {
   const queryClient = useQueryClient();
 
   // Format timestamp for display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     const now = new Date();
     const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
     
@@ -34,8 +34,8 @@ export default function HistoryCard({ summary }: HistoryCardProps) {
   };
 
   // Format duration for display
-  const formatDuration = (seconds: number | undefined) => {
-    if (!seconds) return "00:00";
+  const formatDuration = (seconds: number | undefined | null) => {
+    if (!seconds && seconds !== 0) return "00:00";
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -96,7 +96,19 @@ export default function HistoryCard({ summary }: HistoryCardProps) {
   const tags = generateTags();
 
   return (
-    <Card className="border border-slate-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+    <Card 
+      className="border border-slate-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+      onClick={(e) => {
+        // Prevent clicking card when dropdown is clicked
+        if (e.target instanceof Element && 
+            (e.target.closest('[role="menuitem"]') || 
+             e.target.closest('[role="menu"]') || 
+             e.target.closest('button'))) {
+          return;
+        }
+        setLocation(`/?id=${summary.id}`);
+      }}
+    >
       <div className="aspect-video bg-slate-100 relative">
         <img
           src={thumbnailUrl}
@@ -121,7 +133,7 @@ export default function HistoryCard({ summary }: HistoryCardProps) {
             ))}
           </div>
           <DropdownMenu>
-            <DropdownMenuTrigger className="text-slate-400 hover:text-primary">
+            <DropdownMenuTrigger className="text-slate-400 hover:text-primary z-10">
               <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

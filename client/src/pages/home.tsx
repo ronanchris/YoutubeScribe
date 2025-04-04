@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import UrlForm from "@/components/url-form";
 import SummaryResults from "@/components/summary-results";
 import { Card, CardContent } from "@/components/ui/card";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createSummary } from "@/lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createSummary, getSummary } from "@/lib/api";
 import { SummaryWithScreenshots } from "@shared/schema";
 
 export default function Home() {
@@ -13,13 +13,35 @@ export default function Home() {
   const [summary, setSummary] = useState<SummaryWithScreenshots | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  
+  // Parse URL query parameters to get summary ID
+  const params = new URLSearchParams(window.location.search);
+  const summaryId = params.get('id') ? parseInt(params.get('id')!, 10) : null;
+  
+  // Query to fetch existing summary if ID is provided
+  const { data: existingSummary, isLoading: isLoadingExisting } = useQuery({
+    queryKey: ['/api/summaries', summaryId],
+    queryFn: () => getSummary(summaryId!),
+    enabled: summaryId !== null
+  });
+
+  // Update summary state when query data changes
+  useEffect(() => {
+    if (existingSummary) {
+      setSummary(existingSummary);
+    }
+  }, [existingSummary]);
 
   const summaryMutation = useMutation({
     mutationFn: createSummary,
     onMutate: () => {
       setIsLoading(true);
       setSummary(null);
+      // Clear the id parameter from URL when creating a new summary
+      if (summaryId) {
+        setLocation('/', { replace: true });
+      }
     },
     onSuccess: (data) => {
       setSummary(data);
@@ -65,21 +87,39 @@ export default function Home() {
       </div>
 
       <div className="space-y-6">
-        <UrlForm onSubmit={handleSubmit} />
+        {!summaryId && <UrlForm onSubmit={handleSubmit} />}
 
-        {isLoading && (
+        {(isLoading || isLoadingExisting) && (
           <Card className="bg-white shadow-sm border border-slate-200">
             <CardContent className="p-6">
               <div className="flex flex-col items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-                <p className="text-slate-600 font-medium">Processing video content...</p>
-                <p className="text-sm text-slate-500 mt-2">This may take a few moments depending on video length</p>
+                <p className="text-slate-600 font-medium">
+                  {isLoadingExisting ? "Loading summary..." : "Processing video content..."}
+                </p>
+                <p className="text-sm text-slate-500 mt-2">
+                  {isLoadingExisting 
+                    ? "Retrieving your saved summary" 
+                    : "This may take a few moments depending on video length"}
+                </p>
               </div>
             </CardContent>
           </Card>
         )}
 
         {summary && <SummaryResults summary={summary} />}
+        
+        {/* Show a "New Summary" button when viewing an existing summary */}
+        {summaryId && summary && !isLoadingExisting && (
+          <div className="flex justify-center">
+            <button 
+              onClick={() => setLocation('/', { replace: true })}
+              className="bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Create New Summary
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );
