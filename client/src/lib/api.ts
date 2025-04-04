@@ -69,3 +69,9 @@ export async function acceptInvitation(token: string, newPassword: string): Prom
   const response = await apiRequest("POST", "/api/accept-invitation", { token, newPassword });
   return response.json();
 }
+
+// Regenerate invitation link for an existing user
+export async function regenerateInvitationLink(userId: number): Promise<{ invitationLink: string }> {
+  const response = await apiRequest("POST", `/api/admin/users/${userId}/regenerate-invitation`);
+  return response.json();
+}

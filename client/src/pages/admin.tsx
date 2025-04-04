@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { getUsers, createUser, deleteUser, promoteToAdmin, demoteFromAdmin, createInvitation } from "@/lib/api";
+import { getUsers, createUser, deleteUser, promoteToAdmin, demoteFromAdmin, createInvitation, regenerateInvitationLink } from "@/lib/api";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -206,6 +206,26 @@ export default function AdminPage() {
       });
     },
   });
+  
+  // Mutation to regenerate invitation link for existing user
+  const regenerateInvitationMutation = useMutation({
+    mutationFn: regenerateInvitationLink,
+    onSuccess: (data) => {
+      setIsInviteOpen(true);
+      setInvitationLink(data.invitationLink);
+      toast({
+        title: "Invitation regenerated",
+        description: "A new invitation link has been generated for this user. Copy the link to share.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to regenerate invitation",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Form submission handler
   function onSubmit(values: FormValues) {
@@ -227,6 +247,11 @@ export default function AdminPage() {
   // Handle user demotion
   function handleDemoteUser(id: number) {
     demoteFromAdminMutation.mutate(id);
+  }
+  
+  // Handle regenerating an invitation link for a user
+  function handleRegenerateInvitation(id: number) {
+    regenerateInvitationMutation.mutate(id);
   }
   
   // Handle invitation form submission
@@ -512,6 +537,15 @@ export default function AdminPage() {
                           <span className="sr-only">Demote from Admin</span>
                         </Button>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRegenerateInvitation(user.id)}
+                        disabled={regenerateInvitationMutation.isPending}
+                      >
+                        <Mail className="h-4 w-4" />
+                        <span className="sr-only">Regenerate Invitation</span>
+                      </Button>
                       <Button
                         variant="destructive"
                         size="sm"

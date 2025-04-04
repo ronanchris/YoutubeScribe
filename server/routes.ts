@@ -312,6 +312,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Regenerate invitation link for existing user - admin only
+  app.post("/api/admin/users/:id/regenerate-invitation", ensureAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      // Get the user to verify existence
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Create a new invitation token for the user
+      await storage.invalidateInvitationToken(id); // Clear any existing tokens
+      const { token } = await storage.createInvitation({
+        email: user.username,
+        isAdmin: user.isAdmin
+      });
+      
+      // Create the invitation link
+      const baseUrl = process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 3000}`;
+      const invitationLink = `${baseUrl}/accept-invitation?token=${token}`;
+      
+      res.json({ invitationLink });
+    } catch (error) {
+      console.error("Error regenerating invitation:", error);
+      res.status(500).json({ 
+        message: "Failed to regenerate invitation", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+  
   // Validate invitation token - public
   app.get("/api/validate-invitation", async (req, res) => {
     try {
