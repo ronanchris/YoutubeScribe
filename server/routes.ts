@@ -13,6 +13,13 @@ import crypto from "crypto";
 
 // Using auth middleware from auth.ts
 
+// Helper function to generate invitation links with correct domain
+function generateInvitationLink(req: Request, token: string): string {
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  const baseUrl = `${protocol}://${req.get('host')}`;
+  return `${baseUrl}/accept-invitation?token=${token}`;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
@@ -289,9 +296,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: inviteData.email.trim().toLowerCase()
       });
       
-      // Create the invitation link
-      const baseUrl = process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 3000}`;
-      const invitationLink = `${baseUrl}/accept-invitation?token=${token}`;
+      // Create the invitation link with correct domain
+      const invitationLink = generateInvitationLink(req, token);
       
       // Return the user and invitation link
       res.status(201).json({ 
@@ -342,9 +348,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isPasswordChangeRequired: true
       });
       
-      // Create the invitation link
-      const baseUrl = process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 3000}`;
-      const invitationLink = `${baseUrl}/accept-invitation?token=${token}`;
+      // Create the invitation link with correct domain
+      const invitationLink = generateInvitationLink(req, token);
       
       res.json({ invitationLink });
     } catch (error) {
