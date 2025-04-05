@@ -90,11 +90,22 @@ export default function VideoFrameScrubber({
   // Generate a preview URL for the current timestamp
   const generatePreviewUrl = (ts: number) => {
     // Use YouTube's thumbnail system to get a frame at the specified timestamp
-    return `https://i.ytimg.com/vi_webp/${videoId}/sddefault.webp?v=${ts}`;
+    // Use a unique cache-busting parameter to ensure we get a fresh image
+    const cacheParam = Date.now();
+    
+    // Try using sddefault first (higher quality)
+    if (ts > 0) {
+      // For timestamp-specific frames
+      return `https://i.ytimg.com/vi_webp/${videoId}/sddefault.webp?v=${ts}&t=${cacheParam}`;
+    } else {
+      // For the very start of video, use the standard thumbnail which may be more reliable
+      return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg?t=${cacheParam}`;
+    }
   };
   
   // Update the preview when the timestamp changes
   useEffect(() => {
+    // Force a fresh URL with every timestamp change
     setPreviewUrl(generatePreviewUrl(timestamp));
   }, [timestamp, videoId]);
   
@@ -135,6 +146,7 @@ export default function VideoFrameScrubber({
   
   // Refresh the preview
   const refreshPreview = () => {
+    // Force a new preview by generating a new URL with current timestamp
     setPreviewUrl(generatePreviewUrl(timestamp));
   };
   

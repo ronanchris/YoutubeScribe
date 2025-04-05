@@ -37,7 +37,16 @@ function getYouTubeThumbnailUrl(videoId: string, timestamp: number = 0, quality:
   
   // For timestamps > 0, use the storyboard API to get frames at specific timestamps
   // YouTube provides frame thumbnails in WebP format with the timestamp parameter
-  return `https://i.ytimg.com/vi_webp/${videoId}/sddefault.webp?v=${timestamp}`;
+  // Add a cache-busting parameter to ensure we get a fresh image every time
+  const cacheParam = Date.now();
+  
+  if (timestamp > 0) {
+    // For timestamp-specific frames
+    return `https://i.ytimg.com/vi_webp/${videoId}/sddefault.webp?v=${timestamp}&t=${cacheParam}`;
+  } else {
+    // For the very start of video, use the standard thumbnail which may be more reliable
+    return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg?t=${cacheParam}`;
+  }
 }
 
 /**
