@@ -45,14 +45,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid summary ID" });
       }
 
-      const summary = await storage.getSummaryWithScreenshots(id);
-      if (!summary) {
-        return res.status(404).json({ message: "Summary not found" });
-      }
+      // Pass the requesting user's ID to the storage method
+      const userId = req.user!.id;
+      const summary = await storage.getSummaryWithScreenshots(id, userId);
       
-      // Check if the summary belongs to the user (if userId exists)
-      if (summary.userId !== undefined && summary.userId !== req.user!.id) {
-        return res.status(403).json({ message: "You don't have permission to access this summary" });
+      if (!summary) {
+        return res.status(404).json({ message: "Summary not found or you don't have permission to access it" });
       }
 
       res.json(summary);
@@ -134,13 +132,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // First check if the summary exists and belongs to the user
+      const userId = req.user!.id;
       const summary = await storage.getSummary(id);
+      
       if (!summary) {
         return res.status(404).json({ message: "Summary not found" });
       }
       
-      // Check if the summary belongs to the user (if userId exists)
-      if (summary.userId !== undefined && summary.userId !== req.user!.id) {
+      // Check if the summary belongs to the user
+      if (summary.userId !== undefined && summary.userId !== userId) {
+        console.log(`Delete access denied: User ${userId} attempted to delete summary ${id} belonging to user ${summary.userId}`);
         return res.status(403).json({ message: "You don't have permission to delete this summary" });
       }
 

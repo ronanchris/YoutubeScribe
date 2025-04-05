@@ -242,25 +242,17 @@ export class DatabaseStorage implements IStorage {
   
   async getUserSummaries(userId: number): Promise<Summary[]> {
     try {
-      // Try to query by userId
-      try {
-        // First check if userId column exists
-        const result = await db.select()
-          .from(summaries)
-          .where(eq(summaries.userId, userId))
-          .orderBy(desc(summaries.createdAt));
-        
-        return result;
-      } catch (error) {
-        console.error('Error filtering by userId, column might not exist:', error);
-        
-        // If we get here, the column doesn't exist or some other error occurred
-        // Return all summaries as a fallback
-        console.log('Falling back to returning all summaries');
-        return await db.select().from(summaries).orderBy(desc(summaries.createdAt));
-      }
+      // Always filter by userId to ensure proper data separation
+      const result = await db.select()
+        .from(summaries)
+        .where(eq(summaries.userId, userId))
+        .orderBy(desc(summaries.createdAt));
+      
+      console.log(`Fetched ${result.length} summaries for user ${userId}`);
+      return result;
     } catch (error) {
-      console.error('Error getting user summaries:', error);
+      console.error(`Error getting summaries for user ${userId}:`, error);
+      // Return empty array on error instead of all summaries
       return [];
     }
   }
@@ -308,9 +300,15 @@ export class DatabaseStorage implements IStorage {
     return summary;
   }
 
-  async getSummaryWithScreenshots(id: number): Promise<SummaryWithScreenshots | undefined> {
+  async getSummaryWithScreenshots(id: number, requestingUserId?: number): Promise<SummaryWithScreenshots | undefined> {
     const summary = await this.getSummary(id);
     if (!summary) return undefined;
+    
+    // If requestingUserId is provided, ensure user can only access their own summaries
+    if (requestingUserId !== undefined && summary.userId !== undefined && summary.userId !== requestingUserId) {
+      console.log(`Access denied: User ${requestingUserId} attempted to access summary ${id} belonging to user ${summary.userId}`);
+      return undefined;
+    }
     
     const screenshots = await this.getScreenshotsBySummaryId(id);
     return { ...summary, screenshots };
