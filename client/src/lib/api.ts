@@ -30,6 +30,13 @@ export async function getAllSummaries(): Promise<SummaryWithScreenshots[]> {
   return response.json();
 }
 
+// Get only non-admin summaries (for admin tab view)
+export async function getNonAdminSummaries(): Promise<SummaryWithScreenshots[]> {
+  const response = await apiRequest("GET", "/api/admin/summaries");
+  const allSummaries: SummaryWithScreenshots[] = await response.json();
+  return allSummaries.filter((summary: SummaryWithScreenshots) => summary.userId !== 1); // Filter out admin summaries (admin userId is 1)
+}
+
 export async function getUsers(): Promise<Omit<User, "password">[]> {
   const response = await apiRequest("GET", "/api/admin/users");
   return response.json();
