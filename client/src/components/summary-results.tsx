@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Copy, Bookmark, CheckCheck, Camera, Plus } from "lucide-react";
 import ScreenshotsGallery from "./screenshots-gallery";
 import VideoFrameScrubber from "./video-frame-scrubber";
+import TimestampCapture from "./timestamp-capture";
 import GlossaryTags from "./glossary-tags";
 
 interface SummaryResultsProps {
@@ -216,14 +217,14 @@ export default function SummaryResults({ summary, initialShowScrubber = false }:
                 className="text-xs flex items-center gap-1"
                 onClick={() => setShowFrameScrubber(!showFrameScrubber)}
               >
-                {showFrameScrubber ? "Hide Frame Capture" : "Add Screenshots"}
+                {showFrameScrubber ? "Hide Timestamp Capture" : "Add Timestamp Markers"}
                 {!showFrameScrubber && <Plus className="h-3 w-3" />}
               </Button>
             </div>
             
-            {/* Video frame scrubber */}
+            {/* Timestamp capture component */}
             {showFrameScrubber && (
-              <VideoFrameScrubber
+              <TimestampCapture
                 videoId={summary.videoId}
                 videoDuration={summary.videoDuration}
                 summaryId={summary.id}
