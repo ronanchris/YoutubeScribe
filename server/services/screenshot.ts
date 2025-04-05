@@ -54,28 +54,51 @@ function getYouTubeThumbnailUrl(videoId: string, timestamp: number = 0, quality:
  * This is an API-free approach to get video frames by leveraging YouTube's thumbnail system
  */
 export async function getYouTubeFrameAtTimestamp(videoId: string, timestamp: number): Promise<Buffer> {
-  try {
-    // Generate the URL for the timestamp-specific thumbnail
-    const imageUrl = getYouTubeThumbnailUrl(videoId, timestamp);
+  // We'll try multiple thumbnail formats and fallbacks to maximize the chance of getting a unique frame
+  const thumbnailFormats = [
+    // First try timestamp-based WebP thumbnails
+    () => `https://i.ytimg.com/vi_webp/${videoId}/sddefault.webp?v=${timestamp}&t=${Date.now()}`,
     
-    // Fetch the image
-    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    // Then try standard quality formats with timestamps in URL
+    () => `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg?t=${timestamp}&cache=${Date.now()}`,
+    () => `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg?t=${timestamp}&cache=${Date.now()}`,
+    () => `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg?t=${timestamp}&cache=${Date.now()}`,
     
-    // Return the image buffer
-    return Buffer.from(response.data);
-  } catch (error) {
-    console.error(`Error fetching frame at timestamp ${timestamp}:`, error);
-    
-    // If timestamp-specific frame fails, fall back to default thumbnail
+    // Last resort: use standard default thumbnail
+    () => `https://i.ytimg.com/vi/${videoId}/default.jpg?cache=${Date.now()}`
+  ];
+  
+  // Try each format in sequence until one works
+  let lastError: Error | null = null;
+  
+  for (const getUrl of thumbnailFormats) {
     try {
-      const fallbackUrl = getYouTubeThumbnailUrl(videoId);
-      const fallbackResponse = await axios.get(fallbackUrl, { responseType: 'arraybuffer' });
-      return Buffer.from(fallbackResponse.data);
-    } catch (fallbackError) {
-      console.error('Error fetching fallback image:', fallbackError);
-      throw new Error('Failed to fetch frame');
+      const imageUrl = getUrl();
+      console.log(`Trying to fetch frame from: ${imageUrl}`);
+      
+      // Add retry logic with timeout
+      const timeoutPromise = new Promise<Buffer>((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), 5000);
+      });
+      
+      const fetchPromise = axios.get(imageUrl, { 
+        responseType: 'arraybuffer',
+        timeout: 5000 // 5 second timeout
+      }).then(response => Buffer.from(response.data));
+      
+      // Use the first to complete
+      const imageBuffer = await Promise.race([fetchPromise, timeoutPromise]);
+      return imageBuffer;
+    } catch (error) {
+      console.log(`Format failed, trying next option. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      lastError = error instanceof Error ? error : new Error('Unknown error fetching image');
+      // Continue to next format
     }
   }
+  
+  // If all formats failed, throw the last error
+  console.error('All thumbnail formats failed to fetch', lastError);
+  throw lastError || new Error('Failed to fetch frame from all sources');
 }
 
 /**

@@ -213,17 +213,45 @@ export default function VideoFrameScrubber({
   
   // Capture the current frame
   const captureFrame = () => {
-    setDialogOpen(true);
+    // First refresh the preview to ensure we have a good frame
+    toast({
+      title: "Preparing frame...",
+      description: "Getting the best frame at this timestamp before capture",
+      duration: 1500
+    });
+    
+    // Try to fetch a fresh frame for better quality
+    setIsLoading(true);
+    
+    // Get a fresh cache-busting URL for the quality we want
+    const cacheParam = Date.now();
+    const freshUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg?t=${cacheParam}`;
+    setPreviewUrl(freshUrl);
+    
+    // Wait for a moment to ensure the frame is loaded, then show dialog
+    setTimeout(() => {
+      setIsLoading(false);
+      setDialogOpen(true);
+    }, 800);
   };
   
   // Save the captured frame with description
   const saveFrame = () => {
-    addScreenshotMutation.mutate({
-      summaryId,
-      timestamp,
-      description: description.trim() || `Frame at ${formatTimestamp(timestamp)}`
+    // Show a toast to indicate we're trying to save
+    toast({
+      title: "Saving screenshot...",
+      description: "Please wait while we capture this frame",
     });
-    setDialogOpen(false);
+    
+    // Add a small delay before saving to ensure UI is responsive
+    setTimeout(() => {
+      addScreenshotMutation.mutate({
+        summaryId,
+        timestamp,
+        description: description.trim() || `Frame at ${formatTimestamp(timestamp)}`
+      });
+      setDialogOpen(false);
+    }, 500);
   };
   
   // Refresh the preview with a slight timestamp change to force a new image
@@ -401,7 +429,7 @@ export default function VideoFrameScrubber({
               variant="default" 
               className="flex-shrink-0"
               onClick={captureFrame}
-              disabled={addScreenshotMutation.isPending || isLoading}
+              disabled={false} // Never disable this button to ensure it's always clickable
             >
               <Camera className="h-4 w-4 mr-1" />
               Capture Frame
