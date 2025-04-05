@@ -10,6 +10,9 @@ A private web application that leverages AI to extract, summarize, and organize 
 - OpenAI integration for content processing
 - Authentication system with admin capabilities
 
+### Documentation
+- [User Guide](docs/USER_GUIDE.md) - Comprehensive guide explaining all features and functionality
+
 ## Progress Log
 
 ### April 5, 2025 - Initial Development
@@ -21,6 +24,7 @@ A private web application that leverages AI to extract, summarize, and organize 
 - ✅ Implemented data separation so users can only view their own summaries
 - ✅ Fixed invitation token validation with improved URL parsing
 - ✅ Modified database schema to add user_id column to summaries table
+- ✅ Created comprehensive user guide documentation
 
 #### Current Implementation Details
 - First registered user automatically becomes an admin
@@ -55,3 +59,9 @@ A private web application that leverages AI to extract, summarize, and organize 
 ### AI Integration
 - Using OpenAI GPT-4o for transcript summarization
 - Structured output for key points, summary sections
+
+### Documentation Maintenance
+- Comprehensive user guide in `docs/USER_GUIDE.md`
+- Documentation covers all features, roles, and system functionality
+- Update documentation when adding or modifying features
+- Keep user role information and permissions current
