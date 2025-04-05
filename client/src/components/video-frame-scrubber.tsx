@@ -45,6 +45,7 @@ export default function VideoFrameScrubber({
   const queryClient = useQueryClient();
   const [timestamp, setTimestamp] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
   const [previewUrl, setPreviewUrl] = useState("");
   const [description, setDescription] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -89,29 +90,57 @@ export default function VideoFrameScrubber({
   
   // Generate a preview URL for the current timestamp
   const generatePreviewUrl = (ts: number) => {
-    // Use YouTube's thumbnail system to get a frame at the specified timestamp
     // Use a unique cache-busting parameter to ensure we get a fresh image
     const cacheParam = Date.now();
     
-    // Try using sddefault first (higher quality)
-    if (ts > 0) {
-      // For timestamp-specific frames
-      return `https://i.ytimg.com/vi_webp/${videoId}/sddefault.webp?v=${ts}&t=${cacheParam}`;
-    } else {
-      // For the very start of video, use the standard thumbnail which may be more reliable
+    // We'll use one of several different approaches to maximize our chances
+    // of getting a different frame for different timestamps
+    
+    // For the beginning of the video
+    if (ts === 0) {
       return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg?t=${cacheParam}`;
     }
+    
+    // For timestamps that are multiples of 10, try the maxresdefault
+    if (ts % 10 === 0) {
+      return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg?t=${cacheParam}`;
+    }
+    
+    // For timestamps divisible by 3, use the mq thumbnail
+    if (ts % 3 === 0) {
+      return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg?t=${cacheParam}`;
+    }
+    
+    // For timestamps divisible by 5, use the hq thumbnail 
+    if (ts % 5 === 0) {
+      return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg?t=${cacheParam}`;
+    }
+    
+    // For all other timestamps, use the webp format with the timestamp parameter
+    return `https://i.ytimg.com/vi_webp/${videoId}/sddefault.webp?v=${ts}&t=${cacheParam}`;
   };
   
   // Update the preview when the timestamp changes
   useEffect(() => {
+    // Show loading state
+    setIsLoading(true);
+    
     // Force a fresh URL with every timestamp change
     setPreviewUrl(generatePreviewUrl(timestamp));
+    
+    // Set a timeout to clear loading state if image is taking too long
+    const timeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    
+    return () => clearTimeout(timeout);
   }, [timestamp, videoId]);
   
   // Handle the slider change
   const handleSliderChange = (value: number[]) => {
+    // Set the new timestamp and indicate loading
     setTimestamp(value[0]);
+    setIsLoading(true);
   };
 
   // Handle the manual timestamp input change
@@ -144,10 +173,45 @@ export default function VideoFrameScrubber({
     setDialogOpen(false);
   };
   
-  // Refresh the preview
+  // Refresh the preview with a slight timestamp change to force a new image
   const refreshPreview = () => {
-    // Force a new preview by generating a new URL with current timestamp
-    setPreviewUrl(generatePreviewUrl(timestamp));
+    // Show loading state
+    setIsLoading(true);
+    
+    // Use a larger time offset to ensure we get a different frame
+    const diffAmount = 10; // Use a significant offset
+    let newTimestamp = timestamp + diffAmount;
+    
+    // Make sure we don't exceed video duration
+    if (newTimestamp > maxDuration) {
+      newTimestamp = Math.max(0, timestamp - diffAmount);
+    }
+    
+    // First try a completely different timestamp to break any caching
+    setPreviewUrl(generatePreviewUrl(newTimestamp));
+    
+    // Then quickly set back to original timestamp with a new cache param
+    setTimeout(() => {
+      const cacheParam = Date.now();
+      setPreviewUrl(`https://i.ytimg.com/vi/${videoId}/mqdefault.jpg?t=${cacheParam}`);
+      
+      // And finally try our best quality image with the correct timestamp
+      setTimeout(() => {
+        setPreviewUrl(generatePreviewUrl(timestamp));
+        
+        // Set a timeout to clear loading state if image is taking too long
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 1000);
+      }, 100);
+    }, 100);
+    
+    // Show a toast to explain what's happening
+    toast({
+      title: "Refreshing frame",
+      description: "Trying to get a better frame at this timestamp...",
+      duration: 2000
+    });
   };
   
   return (
@@ -168,15 +232,38 @@ export default function VideoFrameScrubber({
           {/* Preview Image */}
           <div className="relative bg-slate-100 rounded-md overflow-hidden">
             {previewUrl ? (
-              <img 
-                src={previewUrl}
-                alt={`Frame at ${formatTimestamp(timestamp)}`}
-                className="w-full object-contain max-h-64 mx-auto"
-                onError={() => {
-                  // If image fails to load, use a default thumbnail
-                  setPreviewUrl(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`);
-                }}
-              />
+              <>
+                <img 
+                  key={previewUrl} // Force re-render on URL change
+                  src={previewUrl}
+                  alt={`Frame at ${formatTimestamp(timestamp)}`}
+                  className="w-full object-contain max-h-64 mx-auto"
+                  onLoad={() => {
+                    setIsLoading(false);
+                    setErrorCount(0);
+                  }}
+                  onError={() => {
+                    // If image fails to load, try a fallback or increment error count
+                    setErrorCount(prev => prev + 1);
+                    if (errorCount < 3) {
+                      // Try default thumbnail formats in sequence
+                      const formats = ['hqdefault', 'mqdefault', 'default'];
+                      const format = formats[errorCount % formats.length];
+                      setPreviewUrl(`https://i.ytimg.com/vi/${videoId}/${format}.jpg?t=${Date.now()}`);
+                    } else {
+                      // After several failures, just use the default
+                      setPreviewUrl(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg?t=${Date.now()}`);
+                    }
+                  }}
+                />
+                {isLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                    <div className="rounded-md bg-white/90 p-2 shadow-sm">
+                      <RefreshCw className="h-5 w-5 animate-spin text-primary" />
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="h-40 flex items-center justify-center">
                 <p className="text-slate-400">Loading preview...</p>
