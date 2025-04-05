@@ -140,3 +140,70 @@ export async function analyzeScreenshot(
 }
 
 // We're now using the shared formatTimestamp function from "./screenshot"
+
+/**
+ * Analyzes summary content to extract key terms for glossary tagging
+ */
+export async function analyzeKeyTerms(
+  summaryContent: string
+): Promise<string[]> {
+  try {
+    // Build the system prompt for key term extraction
+    const systemPrompt = `
+      You are an expert analyzer of technical and educational content.
+      Extract key technical terms, concepts, or specialized vocabulary from the provided text.
+      Focus on domain-specific terminology, technical concepts, and important named entities.
+      
+      For each term:
+      1. Prioritize technical, scientific, or specialized terms that would benefit from definition
+      2. Exclude common everyday words or general concepts
+      3. Keep proper nouns and product names only if they're technical or specialized
+      
+      Return ONLY a JSON array of strings, with 5-15 key terms.
+      Example format: ["Machine Learning", "Neural Network", "Backpropagation", "TensorFlow"]
+    `;
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: `Extract key technical terms from this content:\n\n${summaryContent}`,
+        },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1, // Low temperature for consistent, precise output
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("Empty response from OpenAI API");
+    }
+
+    // Parse the JSON response
+    const parsedContent = JSON.parse(content);
+    
+    // Check if the response has a terms array, otherwise try to find terms in another property
+    if (Array.isArray(parsedContent.terms)) {
+      return parsedContent.terms;
+    } else if (parsedContent && typeof parsedContent === 'object') {
+      // Try to find the first array property in the response
+      for (const key in parsedContent) {
+        if (Array.isArray(parsedContent[key])) {
+          return parsedContent[key];
+        }
+      }
+    }
+    
+    // If no terms array is found, return an empty array
+    return [];
+  } catch (error) {
+    console.error("Error extracting key terms with OpenAI:", error);
+    // Return an empty array rather than throwing to gracefully handle errors
+    return [];
+  }
+}

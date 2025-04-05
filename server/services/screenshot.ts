@@ -193,7 +193,7 @@ export async function extractScreenshots(youtubeUrl: string): Promise<InsertScre
  * Processes an image to enhance/detect text and diagrams
  * This adds simple visual enhancements to highlight text and diagrams
  */
-async function processImage(imageBuffer: Buffer, timestamp?: number): Promise<Buffer> {
+export async function processImage(imageBuffer: Buffer, timestamp?: number): Promise<Buffer> {
   try {
     // Load the image
     const image = await loadImage(imageBuffer);

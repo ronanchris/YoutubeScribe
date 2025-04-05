@@ -4,8 +4,8 @@ import { storage } from "./storage";
 import { youtubeUrlSchema } from "@shared/schema";
 import { z } from "zod";
 import { getVideoTranscript, getVideoInfo, extractVideoId } from "./services/youtube";
-import { generateSummary } from "./services/openai";
-import { extractScreenshots, createCustomScreenshot } from "./services/screenshot";
+import { generateSummary, analyzeKeyTerms } from "./services/openai";
+import { extractScreenshots, createCustomScreenshot, getYouTubeFrameAtTimestamp, processImage } from "./services/screenshot";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth, ensureAuthenticated, ensureAdmin, hashPassword } from "./auth";
@@ -547,6 +547,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API route to handle preview frame requests
+  app.post("/api/preview-frame", ensureAuthenticated, async (req, res) => {
+    try {
+      const { videoId, timestamp } = req.body;
+      
+      // Validate input
+      if (!videoId || timestamp === undefined) {
+        return res.status(400).json({ message: "videoId and timestamp are required" });
+      }
+      
+      // Get the frame at the specified timestamp
+      const imageBuffer = await getYouTubeFrameAtTimestamp(videoId, timestamp);
+      
+      // Process the image for better quality
+      const processedImage = await processImage(imageBuffer, timestamp);
+      
+      // Return as base64
+      const base64Image = processedImage.toString('base64');
+      
+      return res.json({ imageData: base64Image });
+    } catch (error) {
+      console.error("Error in preview-frame API:", error);
+      return res.status(500).json({ message: "Failed to get frame preview" });
+    }
+  });
+  
+  // API route to extract key terms from a summary
+  app.post("/api/extract-terms", ensureAuthenticated, async (req, res) => {
+    try {
+      const { summaryContent } = req.body;
+      
+      if (!summaryContent) {
+        return res.status(400).json({ message: "Summary content is required" });
+      }
+      
+      // Use OpenAI to extract key terms from the summary
+      const keyTerms = await analyzeKeyTerms(summaryContent);
+      
+      return res.json({ terms: keyTerms });
+    } catch (error) {
+      console.error("Error extracting key terms:", error);
+      return res.status(500).json({ message: "Failed to extract key terms" });
+    }
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }

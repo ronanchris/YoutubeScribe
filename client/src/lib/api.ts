@@ -100,3 +100,17 @@ export async function addCustomScreenshot(
   });
   return response.json();
 }
+
+// New function to preview a frame at a specific timestamp without saving it
+export async function previewVideoFrame(
+  videoId: string,
+  timestamp: number
+): Promise<string> {
+  const response = await apiRequest("POST", `/api/preview-frame`, {
+    videoId, 
+    timestamp
+  });
+  
+  const result = await response.json();
+  return `data:image/jpeg;base64,${result.imageData}`;
+}

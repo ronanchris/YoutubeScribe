@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Copy, Bookmark, CheckCheck, Camera, Plus } from "lucide-react";
 import ScreenshotsGallery from "./screenshots-gallery";
 import VideoFrameScrubber from "./video-frame-scrubber";
+import GlossaryTags from "./glossary-tags";
 
 interface SummaryResultsProps {
   summary: SummaryWithScreenshots;
@@ -134,6 +135,9 @@ export default function SummaryResults({ summary, initialShowScrubber = false }:
                 Summary
               </h3>
               <div className="text-sm text-slate-600 space-y-2">
+                {/* Glossary tags for the summary */}
+                <GlossaryTags summaryContent={summary.summary} />
+                
                 {summary.summary.split('\n\n').map((paragraph, index) => (
                   <p key={index}>{paragraph}</p>
                 ))}
