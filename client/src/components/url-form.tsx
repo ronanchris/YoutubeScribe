@@ -40,17 +40,17 @@ export default function UrlForm({ onSubmit }: UrlFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-slate-700">YouTube URL</FormLabel>
-                  <div className="flex">
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0">
                     <FormControl>
                       <Input
                         placeholder="https://www.youtube.com/watch?v=..."
-                        className="rounded-r-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        className="w-full sm:rounded-r-none focus:ring-2 focus:ring-primary focus:border-transparent"
                         {...field}
                       />
                     </FormControl>
                     <Button 
                       type="submit"
-                      className="bg-primary hover:bg-blue-700 rounded-l-none flex items-center transition-colors"
+                      className="w-full sm:w-auto bg-primary hover:bg-blue-700 sm:rounded-l-none flex items-center justify-center transition-colors"
                       disabled={form.formState.isSubmitting}
                     >
                       <Sparkles className="h-4 w-4 mr-1" />

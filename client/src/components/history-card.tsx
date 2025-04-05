@@ -127,20 +127,20 @@ export default function HistoryCard({ summary }: HistoryCardProps) {
       </div>
       <div className="p-3">
         <h3 className="font-medium text-slate-800 mb-1 line-clamp-1">{summary.videoTitle}</h3>
-        <div className="flex items-center mb-2">
-          <p className="text-xs text-slate-500">
+        <div className="flex flex-wrap items-center mb-2">
+          <p className="text-xs text-slate-500 line-clamp-1 mr-1">
             {summary.videoAuthor} • Processed {formatDate(summary.createdAt)}
           </p>
           {/* Show user ID badge for admin users */}
           {isAdmin && summary.userId !== undefined && (
-            <span className="ml-1 flex items-center bg-purple-100 text-purple-800 text-xs px-1.5 py-0.5 rounded">
+            <span className="mt-1 sm:mt-0 inline-flex items-center bg-purple-100 text-purple-800 text-xs px-1.5 py-0.5 rounded">
               <User className="inline mr-1 h-3 w-3" />
               ID: {summary.userId}
             </span>
           )}
         </div>
         <div className="flex justify-between items-center">
-          <div className="flex space-x-1">
+          <div className="flex flex-wrap gap-1">
             {tags.map((tag, index) => (
               <span key={index} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
                 {tag}
@@ -148,7 +148,7 @@ export default function HistoryCard({ summary }: HistoryCardProps) {
             ))}
           </div>
           <DropdownMenu>
-            <DropdownMenuTrigger className="text-slate-400 hover:text-primary z-10">
+            <DropdownMenuTrigger className="text-slate-400 hover:text-primary z-10 p-1">
               <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

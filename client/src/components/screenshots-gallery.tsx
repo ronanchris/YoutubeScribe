@@ -46,7 +46,7 @@ export default function ScreenshotsGallery({ screenshots }: ScreenshotsGalleryPr
         Key Visuals
       </h3>
       
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {screenshots.map((screenshot) => (
           <Dialog key={screenshot.id}>
             <DialogTrigger asChild>
@@ -57,21 +57,22 @@ export default function ScreenshotsGallery({ screenshots }: ScreenshotsGalleryPr
                 <img
                   src={`data:image/jpeg;base64,${screenshot.imageUrl}`}
                   alt={screenshot.description || "Video screenshot"}
-                  className="w-full h-32 object-cover rounded-lg border border-slate-200 mb-1"
+                  className="w-full h-40 sm:h-32 object-cover rounded-lg border border-slate-200 mb-1"
+                  loading="lazy"
                 />
                 <p className="text-xs text-slate-500 truncate">
                   {screenshot.description} ({formatTimestamp(screenshot.timestamp)})
                 </p>
               </div>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-w-[95vw] w-full p-3 sm:p-6">
               <div className="text-center">
                 <img
                   src={`data:image/jpeg;base64,${screenshot.imageUrl}`}
                   alt={screenshot.description || "Video screenshot"}
-                  className="max-w-full rounded-md mx-auto"
+                  className="max-w-full rounded-md mx-auto max-h-[50vh] sm:max-h-[60vh] object-contain"
                 />
-                <p className="mt-2 text-sm font-medium">{screenshot.description}</p>
+                <p className="mt-2 text-sm font-medium break-words">{screenshot.description}</p>
                 <p className="text-xs text-slate-500">
                   Timestamp: {formatTimestamp(screenshot.timestamp)}
                 </p>

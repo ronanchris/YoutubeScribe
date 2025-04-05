@@ -74,9 +74,9 @@ export default function SummaryResults({ summary }: SummaryResultsProps) {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-5">
+      <div className="grid grid-cols-1 md:grid-cols-5">
         {/* Summary Content */}
-        <div className="md:col-span-3 p-4 border-r border-slate-200">
+        <div className="md:col-span-3 p-3 sm:p-4 md:border-r border-slate-200">
           <div className="space-y-4">
             <div>
               <h3 className="text-md font-semibold text-slate-700 mb-2 flex items-center">
@@ -166,7 +166,7 @@ export default function SummaryResults({ summary }: SummaryResultsProps) {
         </div>
 
         {/* Screenshots Gallery */}
-        <div className="md:col-span-2 p-4 bg-slate-50">
+        <div className="md:col-span-2 p-3 sm:p-4 bg-slate-50 border-t md:border-t-0 border-slate-200">
           <ScreenshotsGallery screenshots={summary.screenshots} />
         </div>
       </div>
