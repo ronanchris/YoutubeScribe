@@ -102,9 +102,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       console.log("Saved successfully with ID:", newSummary.id);
       
-      // 6. Verify the summary was stored properly
-      const allSummaries = await storage.getAllSummariesWithScreenshots();
-      console.log(`Total summaries in storage: ${allSummaries.length}`);
+      // 6. Verify that just this user's summaries were updated properly
+      const userSummaries = await storage.getUserSummariesWithScreenshots(req.user!.id);
+      console.log(`Total summaries for user ${req.user!.id}: ${userSummaries.length}`);
       
       // Return the summary
       res.status(201).json(newSummary);
@@ -158,6 +158,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes - require admin privileges
+  
+  // Get all summaries across all users - admin only
+  app.get("/api/admin/summaries", ensureAdmin, async (req, res) => {
+    try {
+      const summaries = await storage.getAllSummariesWithScreenshots();
+      res.json(summaries);
+    } catch (error) {
+      console.error("Error getting all summaries:", error);
+      res.status(500).json({ message: "Failed to retrieve summaries" });
+    }
+  });
   
   // Get all users - admin only
   app.get("/api/admin/users", ensureAdmin, async (req, res) => {
