@@ -2,9 +2,10 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { youtubeUrlSchema } from "@shared/schema";
-import { getVideoTranscript, getVideoInfo } from "./services/youtube";
+import { z } from "zod";
+import { getVideoTranscript, getVideoInfo, extractVideoId } from "./services/youtube";
 import { generateSummary } from "./services/openai";
-import { extractScreenshots } from "./services/screenshot";
+import { extractScreenshots, createCustomScreenshot } from "./services/screenshot";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth, ensureAuthenticated, ensureAdmin, hashPassword } from "./auth";
@@ -123,6 +124,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add a custom screenshot to a summary - requires authentication
+  app.post("/api/summaries/:id/screenshots", ensureAuthenticated, async (req, res) => {
+    try {
+      // Define validation schema for request body
+      const requestSchema = z.object({
+        timestamp: z.number().min(0).max(86400), // Maximum 24 hours
+        description: z.string().optional(),
+      });
+      
+      // Validate request data
+      const { timestamp, description } = requestSchema.parse(req.body);
+      
+      // Get summary ID from URL params
+      const summaryId = parseInt(req.params.id);
+      if (isNaN(summaryId)) {
+        return res.status(400).json({ message: "Invalid summary ID" });
+      }
+      
+      // Get the summary to check permissions and get video ID
+      const userId = req.user!.id;
+      const summary = await storage.getSummary(summaryId);
+      
+      if (!summary) {
+        return res.status(404).json({ message: "Summary not found" });
+      }
+      
+      // Check if the summary belongs to the user
+      if (summary.userId !== undefined && summary.userId !== userId) {
+        console.log(`Access denied: User ${userId} attempted to modify summary ${summaryId} belonging to user ${summary.userId}`);
+        return res.status(403).json({ message: "You don't have permission to modify this summary" });
+      }
+      
+      // Create the custom screenshot
+      const videoId = summary.videoId;
+      const screenshot = await createCustomScreenshot(videoId, timestamp, description);
+      
+      // Set the summary ID
+      screenshot.summaryId = summaryId;
+      
+      // Save the screenshot to the database
+      const savedScreenshot = await storage.createScreenshot(screenshot);
+      
+      // Return the saved screenshot
+      res.status(201).json(savedScreenshot);
+    } catch (error) {
+      console.error("Error adding custom screenshot:", error);
+      
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to add custom screenshot", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+  
   // Delete a summary - requires authentication
   app.delete("/api/summaries/:id", ensureAuthenticated, async (req, res) => {
     try {

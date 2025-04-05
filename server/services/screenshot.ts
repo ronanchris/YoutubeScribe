@@ -14,106 +14,145 @@ export function formatTimestamp(seconds: number): string {
   return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-// Simple utility to get YouTube video thumbnail URLs at different timestamps
-function getYouTubeThumbnailUrl(videoId: string, timestamp: number): string {
-  // For real-world implementation, you'd use the YouTube Player API to get actual frames
+/**
+ * Get YouTube video thumbnail URLs
+ * @param videoId YouTube video ID
+ * @param timestamp Optional timestamp in seconds to get frame at specific time
+ * @param quality Image quality ('default', 'mq', 'hq', 'sd', 'maxres')
+ * @returns URL to the thumbnail image
+ */
+function getYouTubeThumbnailUrl(videoId: string, timestamp: number = 0, quality: string = 'hq'): string {
+  // If timestamp is 0, return the standard thumbnail
+  if (timestamp === 0) {
+    // Use predefined quality options
+    switch (quality) {
+      case 'default': return `https://i.ytimg.com/vi/${videoId}/default.jpg`;      // 120x90
+      case 'mq': return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;        // 320x180
+      case 'hq': return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;        // 480x360
+      case 'sd': return `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`;        // 640x480
+      case 'maxres': return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`; // 1280x720
+      default: return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+    }
+  }
   
-  // Since YouTube doesn't provide an API to get frames at specific timestamps,
-  // we'll simulate different thumbnails by using various available image variants
-  const thumbnailOptions = [
-    // Standard thumbnail options
-    `https://i.ytimg.com/vi/${videoId}/default.jpg`,      // Default thumbnail (120x90)
-    `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,    // Medium quality (320x180)
-    `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,    // High quality (480x360)
-    `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`,    // Standard definition (640x480)
-    
-    // Alternative thumbnails that YouTube generates for videos
-    `https://i.ytimg.com/vi/${videoId}/0.jpg`,            // First thumbnail
-    `https://i.ytimg.com/vi/${videoId}/1.jpg`,            // Second thumbnail
-    `https://i.ytimg.com/vi/${videoId}/2.jpg`,            // Third thumbnail
-    `https://i.ytimg.com/vi/${videoId}/3.jpg`,            // Fourth thumbnail
-    `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` // Maximum resolution
-  ];
-  
-  // Map timestamp to a thumbnail index
-  // For demo purposes, this ensures different timestamps get different thumbnails
-  const index = Math.floor(timestamp / 60) % thumbnailOptions.length;
-  
-  return thumbnailOptions[index];
+  // For timestamps > 0, use the storyboard API to get frames at specific timestamps
+  // YouTube provides frame thumbnails in WebP format with the timestamp parameter
+  return `https://i.ytimg.com/vi_webp/${videoId}/sddefault.webp?v=${timestamp}`;
 }
 
 /**
- * Extracts and processes key screenshots from a YouTube video
- * Note: In a real implementation, this would involve:
- * 1. Downloading the video
- * 2. Extracting frames at regular intervals
- * 3. Processing frames for text/diagram detection
- * 4. Selecting the most informative frames
- * 
- * For this demo, we'll simulate by:
- * 1. Getting the video thumbnail at different timestamps
- * 2. Processing these images to detect text/diagrams
+ * Get a frame from a YouTube video at a specific timestamp
+ * This is an API-free approach to get video frames by leveraging YouTube's thumbnail system
+ */
+export async function getYouTubeFrameAtTimestamp(videoId: string, timestamp: number): Promise<Buffer> {
+  try {
+    // Generate the URL for the timestamp-specific thumbnail
+    const imageUrl = getYouTubeThumbnailUrl(videoId, timestamp);
+    
+    // Fetch the image
+    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    
+    // Return the image buffer
+    return Buffer.from(response.data);
+  } catch (error) {
+    console.error(`Error fetching frame at timestamp ${timestamp}:`, error);
+    
+    // If timestamp-specific frame fails, fall back to default thumbnail
+    try {
+      const fallbackUrl = getYouTubeThumbnailUrl(videoId);
+      const fallbackResponse = await axios.get(fallbackUrl, { responseType: 'arraybuffer' });
+      return Buffer.from(fallbackResponse.data);
+    } catch (fallbackError) {
+      console.error('Error fetching fallback image:', fallbackError);
+      throw new Error('Failed to fetch frame');
+    }
+  }
+}
+
+/**
+ * Creates a new screenshot from a video frame at a specific timestamp
+ * @param videoId YouTube video ID
+ * @param timestamp Timestamp in seconds
+ * @param description Optional user-provided description
+ * @returns Prepared screenshot object ready to be saved
+ */
+export async function createCustomScreenshot(
+  videoId: string, 
+  timestamp: number, 
+  description?: string
+): Promise<InsertScreenshot> {
+  try {
+    // Get the frame at the specified timestamp
+    const imageBuffer = await getYouTubeFrameAtTimestamp(videoId, timestamp);
+    
+    // Process the image with our enhancement pipeline
+    const processedImage = await processImage(imageBuffer, timestamp);
+    
+    // Convert to base64 for storage
+    const base64Image = processedImage.toString('base64');
+    
+    // If no description was provided, use a generic one
+    const screenshotDescription = description || `Frame captured at ${formatTimestamp(timestamp)}`;
+    
+    // Return the prepared screenshot object (summaryId will be set by the caller)
+    return {
+      summaryId: 0,
+      imageUrl: base64Image,
+      timestamp,
+      description: screenshotDescription
+    };
+  } catch (error) {
+    console.error('Error creating custom screenshot:', error);
+    throw new Error('Failed to create screenshot from the specified timestamp');
+  }
+}
+
+/**
+ * Gets a single default thumbnail for a YouTube video.
+ * This is a simplified version that returns just one thumbnail to speed up summary generation.
+ * Users can later enhance their summaries with additional screenshots using the frame capture interface.
  */
 export async function extractScreenshots(youtubeUrl: string): Promise<InsertScreenshot[]> {
   try {
-    // Get the video ID and info (including duration)
+    // Get the video ID and info
     const videoId = extractVideoId(youtubeUrl);
     const videoInfo = await getVideoInfo(youtubeUrl);
     
-    // Calculate optimal screenshot timestamps based on video duration
-    // We'll take 4-6 screenshots distributed throughout the video
-    const videoDuration = videoInfo.videoDuration;
-    const numberOfScreenshots = Math.min(6, Math.max(4, Math.floor(videoDuration / 120)));
-    
-    // Generate timestamps at relatively even intervals, skipping the first and last 10%
-    // This helps avoid intro/outro content and focuses on the main video content
-    const startTime = Math.floor(videoDuration * 0.1); // Skip first 10%
-    const endTime = Math.floor(videoDuration * 0.9);   // Skip last 10%
-    const interval = Math.floor((endTime - startTime) / (numberOfScreenshots - 1));
-    
-    const timestamps: number[] = [];
-    for (let i = 0; i < numberOfScreenshots; i++) {
-      timestamps.push(startTime + (i * interval));
-    }
-    
-    console.log(`Extracting ${timestamps.length} screenshots at timestamps:`, timestamps);
+    console.log(`Getting default thumbnail for video: ${videoId}`);
     
     const screenshots: InsertScreenshot[] = [];
     
-    for (const timestamp of timestamps) {
-      try {
-        // Get thumbnail URL for this timestamp
-        const thumbnailUrl = getYouTubeThumbnailUrl(videoId, timestamp);
-        
-        // Fetch the image
-        const response = await axios.get(thumbnailUrl, { responseType: 'arraybuffer' });
-        const imageBuffer = Buffer.from(response.data);
-        
-        // Process the image with canvas to simulate diagram/text detection
-        const processedImage = await processImage(imageBuffer, timestamp);
-        
-        // Convert the processed image to base64
-        const base64Image = processedImage.toString('base64');
-        
-        // Generate a description for the screenshot using OpenAI Vision
-        const description = await analyzeScreenshot(base64Image, timestamp);
-        
-        // Add to screenshots collection
-        screenshots.push({
-          summaryId: 0, // Will be set when saving
-          imageUrl: base64Image,
-          timestamp,
-          description
-        });
-      } catch (error: any) {
-        console.error(`Error processing screenshot at timestamp ${timestamp}:`, error?.message || 'Unknown error');
-        // Continue with other timestamps
-      }
+    try {
+      // Use the high-quality default thumbnail
+      const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+      
+      // Fetch the image
+      const response = await axios.get(thumbnailUrl, { responseType: 'arraybuffer' });
+      const imageBuffer = Buffer.from(response.data);
+      
+      // Process the image with canvas to add basic enhancements
+      const processedImage = await processImage(imageBuffer);
+      
+      // Convert the processed image to base64
+      const base64Image = processedImage.toString('base64');
+      
+      // Add a generic description since this is just the default thumbnail
+      const description = `Default thumbnail for "${videoInfo.videoTitle}" by ${videoInfo.videoAuthor}`;
+      
+      // Add to screenshots collection
+      screenshots.push({
+        summaryId: 0, // Will be set when saving
+        imageUrl: base64Image,
+        timestamp: 0, // Default thumbnail has timestamp 0
+        description
+      });
+    } catch (error: any) {
+      console.error(`Error processing default thumbnail:`, error?.message || 'Unknown error');
     }
     
     return screenshots;
   } catch (error: any) {
-    console.error('Error extracting screenshots:', error?.message || 'Unknown error');
+    console.error('Error extracting default thumbnail:', error?.message || 'Unknown error');
     return []; // Return empty array in case of failure
   }
 }

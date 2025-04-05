@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Copy, Trash2, ExternalLink, User } from "lucide-react";
+import { MoreHorizontal, Copy, Trash2, ExternalLink, User, Camera } from "lucide-react";
 
 interface HistoryCardProps {
   summary: SummaryWithScreenshots;
@@ -155,6 +155,10 @@ export default function HistoryCard({ summary }: HistoryCardProps) {
               <DropdownMenuItem onClick={() => setLocation(`/?id=${summary.id}`)}>
                 <ExternalLink className="mr-2 h-4 w-4" />
                 <span>View</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLocation(`/?id=${summary.id}&screenshots=add`)}>
+                <Camera className="mr-2 h-4 w-4" />
+                <span>Add Screenshots</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
                 navigator.clipboard.writeText(summary.videoUrl);

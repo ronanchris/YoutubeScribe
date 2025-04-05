@@ -15,9 +15,10 @@ export default function Home() {
   const queryClient = useQueryClient();
   const [location, setLocation] = useLocation();
   
-  // Parse URL query parameters to get summary ID
+  // Parse URL query parameters to get summary ID and screenshot flag
   const params = new URLSearchParams(window.location.search);
   const summaryId = params.get('id') ? parseInt(params.get('id')!, 10) : null;
+  const showScreenshots = params.get('screenshots') === 'add';
   
   // Query to fetch existing summary if ID is provided
   const { data: existingSummary, isLoading: isLoadingExisting } = useQuery({
@@ -106,7 +107,7 @@ export default function Home() {
           </Card>
         )}
 
-        {summary && <SummaryResults summary={summary} />}
+        {summary && <SummaryResults summary={summary} initialShowScrubber={showScreenshots} />}
         
         {/* Show a "New Summary" button when viewing an existing summary */}
         {summaryId && summary && !isLoadingExisting && (

@@ -1,18 +1,23 @@
 import { useState } from "react";
-import { SummaryWithScreenshots } from "@shared/schema";
+import { SummaryWithScreenshots, Screenshot } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Bookmark, CheckCheck } from "lucide-react";
+import { Copy, Bookmark, CheckCheck, Camera, Plus } from "lucide-react";
 import ScreenshotsGallery from "./screenshots-gallery";
+import VideoFrameScrubber from "./video-frame-scrubber";
 
 interface SummaryResultsProps {
   summary: SummaryWithScreenshots;
+  initialShowScrubber?: boolean;
 }
 
-export default function SummaryResults({ summary }: SummaryResultsProps) {
+export default function SummaryResults({ summary, initialShowScrubber = false }: SummaryResultsProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showFrameScrubber, setShowFrameScrubber] = useState(initialShowScrubber);
+  const [screenshots, setScreenshots] = useState<Screenshot[]>(summary.screenshots);
 
   // Format structured outline for rendering
   const structuredOutline = summary.structuredOutline as { title: string; items: string[] }[];
@@ -44,6 +49,15 @@ export default function SummaryResults({ summary }: SummaryResultsProps) {
     toast({
       title: "Summary saved",
       description: "This summary is now in your history",
+    });
+  };
+  
+  // Handle adding new screenshots
+  const handleScreenshotAdded = (newScreenshot: Screenshot) => {
+    setScreenshots(prev => [...prev, newScreenshot]);
+    toast({
+      title: "Screenshot added",
+      description: "Custom screenshot has been added to this summary",
     });
   };
 
@@ -167,7 +181,55 @@ export default function SummaryResults({ summary }: SummaryResultsProps) {
 
         {/* Screenshots Gallery */}
         <div className="md:col-span-2 p-3 sm:p-4 bg-slate-50 border-t md:border-t-0 border-slate-200">
-          <ScreenshotsGallery screenshots={summary.screenshots} />
+          <div className="flex flex-col space-y-3">
+            {/* Toggle button for frame scrubber */}
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-md font-semibold text-slate-700 flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-5 w-5 text-primary mr-1"
+                >
+                  <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                  <line x1="7" y1="2" x2="7" y2="22" />
+                  <line x1="17" y1="2" x2="17" y2="22" />
+                  <line x1="2" y1="12" x2="22" y2="12" />
+                  <line x1="2" y1="7" x2="7" y2="7" />
+                  <line x1="2" y1="17" x2="7" y2="17" />
+                  <line x1="17" y1="17" x2="22" y2="17" />
+                  <line x1="17" y1="7" x2="22" y2="7" />
+                </svg>
+                Screenshots ({screenshots.length})
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs flex items-center gap-1"
+                onClick={() => setShowFrameScrubber(!showFrameScrubber)}
+              >
+                {showFrameScrubber ? "Hide Frame Capture" : "Add Screenshots"}
+                {!showFrameScrubber && <Plus className="h-3 w-3" />}
+              </Button>
+            </div>
+            
+            {/* Video frame scrubber */}
+            {showFrameScrubber && (
+              <VideoFrameScrubber
+                videoId={summary.videoId}
+                videoDuration={summary.videoDuration}
+                summaryId={summary.id}
+                onScreenshotAdded={handleScreenshotAdded}
+              />
+            )}
+            
+            {/* Screenshots gallery */}
+            <ScreenshotsGallery screenshots={screenshots} />
+          </div>
         </div>
       </div>
     </Card>

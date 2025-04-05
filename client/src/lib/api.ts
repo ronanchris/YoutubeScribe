@@ -1,4 +1,4 @@
-import { SummaryWithScreenshots, YoutubeUrlInput, User, AdminInsertUser, UpdateUser, InviteUser } from "@shared/schema";
+import { SummaryWithScreenshots, YoutubeUrlInput, User, AdminInsertUser, UpdateUser, InviteUser, Screenshot } from "@shared/schema";
 import { apiRequest } from "./queryClient";
 
 // Create a new summary from a YouTube URL
@@ -85,5 +85,18 @@ export async function acceptInvitation(token: string, newPassword: string): Prom
 // Regenerate invitation link for an existing user
 export async function regenerateInvitationLink(userId: number): Promise<{ invitationLink: string }> {
   const response = await apiRequest("POST", `/api/admin/users/${userId}/regenerate-invitation`);
+  return response.json();
+}
+
+// Add a custom screenshot to a summary
+export async function addCustomScreenshot(
+  summaryId: number, 
+  timestamp: number, 
+  description?: string
+): Promise<Screenshot> {
+  const response = await apiRequest("POST", `/api/summaries/${summaryId}/screenshots`, {
+    timestamp,
+    description
+  });
   return response.json();
 }
