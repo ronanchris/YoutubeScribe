@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import UrlForm from "@/components/url-form";
 import SummaryResults from "@/components/summary-results";
@@ -69,20 +69,19 @@ export default function Home() {
   };
 
   return (
-    <main className="container mx-auto px-4 py-6">
+    <main className="container mx-auto px-4 py-6 pb-12">
       <div className="mb-6 border-b border-slate-200">
         <div className="flex -mb-px">
-          <button
+          <Link href="/"
             className="px-4 py-2 font-medium text-sm text-primary border-b-2 border-primary"
           >
             New Summary
-          </button>
-          <button
+          </Link>
+          <Link href="/history"
             className="px-4 py-2 font-medium text-sm text-slate-500 hover:text-slate-700"
-            onClick={() => setLocation("/history")}
           >
             History
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -111,13 +110,12 @@ export default function Home() {
         
         {/* Show a "New Summary" button when viewing an existing summary */}
         {summaryId && summary && !isLoadingExisting && (
-          <div className="flex justify-center">
-            <button 
-              onClick={() => setLocation('/', { replace: true })}
-              className="bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          <div className="flex justify-center mt-6">
+            <Link href="/"
+              className="bg-primary text-white px-5 py-3 rounded-md hover:bg-blue-700 transition-colors inline-block font-medium text-center shadow-sm"
             >
               Create New Summary
-            </button>
+            </Link>
           </div>
         )}
       </div>
