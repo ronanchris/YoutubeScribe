@@ -4,13 +4,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteSummary } from "@/lib/api";
 import { SummaryWithScreenshots } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Copy, Trash2, ExternalLink } from "lucide-react";
+import { MoreHorizontal, Copy, Trash2, ExternalLink, User } from "lucide-react";
 
 interface HistoryCardProps {
   summary: SummaryWithScreenshots;
@@ -20,6 +21,8 @@ export default function HistoryCard({ summary }: HistoryCardProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth() || { user: null };
+  const isAdmin = user?.isAdmin || false;
 
   // Format timestamp for display
   const formatDate = (dateString: string | Date) => {
@@ -76,8 +79,11 @@ export default function HistoryCard({ summary }: HistoryCardProps) {
         title: "Summary deleted",
         description: "The summary has been removed from your history",
       });
-      // Invalidate summaries query to update history
+      // Invalidate both regular and admin summaries queries to update history
       queryClient.invalidateQueries({ queryKey: ['/api/summaries'] });
+      if (isAdmin) {
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/summaries'] });
+      }
     },
     onError: (error) => {
       toast({
@@ -121,9 +127,18 @@ export default function HistoryCard({ summary }: HistoryCardProps) {
       </div>
       <div className="p-3">
         <h3 className="font-medium text-slate-800 mb-1 line-clamp-1">{summary.videoTitle}</h3>
-        <p className="text-xs text-slate-500 mb-2">
-          {summary.videoAuthor} • Processed {formatDate(summary.createdAt)}
-        </p>
+        <div className="flex items-center mb-2">
+          <p className="text-xs text-slate-500">
+            {summary.videoAuthor} • Processed {formatDate(summary.createdAt)}
+          </p>
+          {/* Show user ID badge for admin users */}
+          {isAdmin && summary.userId !== undefined && (
+            <span className="ml-1 flex items-center bg-purple-100 text-purple-800 text-xs px-1.5 py-0.5 rounded">
+              <User className="inline mr-1 h-3 w-3" />
+              ID: {summary.userId}
+            </span>
+          )}
+        </div>
         <div className="flex justify-between items-center">
           <div className="flex space-x-1">
             {tags.map((tag, index) => (

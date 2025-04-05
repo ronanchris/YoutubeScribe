@@ -25,6 +25,11 @@ export async function deleteSummary(id: number): Promise<void> {
 }
 
 // Admin API functions
+export async function getAllSummaries(): Promise<SummaryWithScreenshots[]> {
+  const response = await apiRequest("GET", "/api/admin/summaries");
+  return response.json();
+}
+
 export async function getUsers(): Promise<Omit<User, "password">[]> {
   const response = await apiRequest("GET", "/api/admin/users");
   return response.json();
