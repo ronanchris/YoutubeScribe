@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { addCustomScreenshot } from "@/lib/api";
+import { addCustomScreenshot, previewVideoFrame } from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -167,21 +167,69 @@ export default function VideoFrameScrubber({
     }, 500);
   }, [timestamp, maxDuration, stepSize, sliderLocked]);
   
+  // Use server-side API to fetch frames
+  const fetchFrameFromServer = useCallback(async (ts: number) => {
+    try {
+      setIsLoading(true);
+      // Use the server API to get a high-quality frame
+      const imageDataUrl = await previewVideoFrame(videoId, ts);
+      setPreviewUrl(imageDataUrl);
+      setIsLoading(false);
+      return true;
+    } catch (error) {
+      console.error("Error fetching frame from server:", error);
+      setIsLoading(false);
+      return false;
+    }
+  }, [videoId]);
+  
   // Update the preview when the timestamp changes
   useEffect(() => {
     // Show loading state
     setIsLoading(true);
     
-    // Force a fresh URL with every timestamp change
-    setPreviewUrl(generatePreviewUrl(timestamp));
+    // Define a timeout for the API call
+    const timeoutDuration = 5000; // 5 seconds
     
-    // Set a timeout to clear loading state if image is taking too long
-    const timeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
+    // Create a promise that rejects after the timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Frame fetch timeout")), timeoutDuration);
+    });
     
-    return () => clearTimeout(timeout);
-  }, [timestamp, videoId]);
+    // Create a promise for the API call
+    const fetchPromise = async () => {
+      try {
+        // Try to fetch from server first
+        const success = await fetchFrameFromServer(timestamp);
+        
+        // Fall back to direct URL if server fails
+        if (!success) {
+          setPreviewUrl(generatePreviewUrl(timestamp));
+        }
+      } catch (error) {
+        // If server API fails, use direct URL as fallback
+        console.log("Falling back to direct URL:", error);
+        setPreviewUrl(generatePreviewUrl(timestamp));
+      }
+    };
+    
+    // Race the API call against the timeout
+    Promise.race([fetchPromise(), timeoutPromise]).catch(error => {
+      console.warn("Frame fetch issue:", error);
+      // Use direct URL as fallback on timeout
+      setPreviewUrl(generatePreviewUrl(timestamp));
+    }).finally(() => {
+      // Always clear loading state after some time
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
+    });
+    
+    // Cleanup function
+    return () => {
+      // No cleanup needed since we're using promises
+    };
+  }, [timestamp, videoId, fetchFrameFromServer, generatePreviewUrl]);
   
   // Handle the slider change
   const handleSliderChange = (value: number[]) => {
@@ -211,28 +259,56 @@ export default function VideoFrameScrubber({
     }
   };
   
-  // Capture the current frame
-  const captureFrame = () => {
-    // First refresh the preview to ensure we have a good frame
+  // Capture the current frame using server API
+  const captureFrame = async () => {
+    // Show toast to indicate what's happening
     toast({
       title: "Preparing frame...",
       description: "Getting the best frame at this timestamp before capture",
       duration: 1500
     });
     
-    // Try to fetch a fresh frame for better quality
+    // Set loading state
     setIsLoading(true);
     
-    // Get a fresh cache-busting URL for the quality we want
-    const cacheParam = Date.now();
-    const freshUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg?t=${cacheParam}`;
-    setPreviewUrl(freshUrl);
-    
-    // Wait for a moment to ensure the frame is loaded, then show dialog
-    setTimeout(() => {
+    try {
+      // Try to get high-quality frame from the server first
+      const success = await fetchFrameFromServer(timestamp);
+      
+      if (!success) {
+        // Fall back to direct URLs if server API fails
+        const cacheParam = Date.now();
+        const freshUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg?t=${cacheParam}`;
+        setPreviewUrl(freshUrl);
+        
+        // Wait a moment for the image to load
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      // Clear loading state and show dialog
       setIsLoading(false);
       setDialogOpen(true);
-    }, 800);
+    } catch (error) {
+      console.error("Error capturing frame:", error);
+      
+      // Fall back to direct URL on error
+      const cacheParam = Date.now();
+      const freshUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg?t=${cacheParam}`;
+      setPreviewUrl(freshUrl);
+      
+      // Show error toast
+      toast({
+        title: "Frame capture issue",
+        description: "Using fallback method for frame capture",
+        variant: "destructive",
+      });
+      
+      // Clear loading state and show dialog after a short delay
+      setTimeout(() => {
+        setIsLoading(false);
+        setDialogOpen(true);
+      }, 800);
+    }
   };
   
   // Save the captured frame with description
@@ -254,45 +330,55 @@ export default function VideoFrameScrubber({
     }, 500);
   };
   
-  // Refresh the preview with a slight timestamp change to force a new image
-  const refreshPreview = () => {
+  // Refresh the preview using server API
+  const refreshPreview = async () => {
     // Show loading state
     setIsLoading(true);
-    
-    // Use a larger time offset to ensure we get a different frame
-    const diffAmount = 10; // Use a significant offset
-    let newTimestamp = timestamp + diffAmount;
-    
-    // Make sure we don't exceed video duration
-    if (newTimestamp > maxDuration) {
-      newTimestamp = Math.max(0, timestamp - diffAmount);
-    }
-    
-    // First try a completely different timestamp to break any caching
-    setPreviewUrl(generatePreviewUrl(newTimestamp));
-    
-    // Then quickly set back to original timestamp with a new cache param
-    setTimeout(() => {
-      const cacheParam = Date.now();
-      setPreviewUrl(`https://i.ytimg.com/vi/${videoId}/mqdefault.jpg?t=${cacheParam}`);
-      
-      // And finally try our best quality image with the correct timestamp
-      setTimeout(() => {
-        setPreviewUrl(generatePreviewUrl(timestamp));
-        
-        // Set a timeout to clear loading state if image is taking too long
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 1000);
-      }, 100);
-    }, 100);
     
     // Show a toast to explain what's happening
     toast({
       title: "Refreshing frame",
-      description: "Trying to get a better frame at this timestamp...",
-      duration: 2000
+      description: "Getting a fresh frame at this timestamp...",
+      duration: 1500
     });
+    
+    try {
+      // First try to get a fresh frame from the server API
+      await fetchFrameFromServer(timestamp);
+    } catch (error) {
+      console.error("Error refreshing frame from server:", error);
+      
+      // If server fetch fails, try the fallback approach with direct URLs
+      // Use a different timestamp to force cache refresh
+      const diffAmount = 1; // Small difference to force cache refresh
+      let newTimestamp = Math.max(0, Math.min(maxDuration, timestamp + diffAmount));
+      
+      // Try a different timestamp first to break any caching
+      setPreviewUrl(generatePreviewUrl(newTimestamp));
+      
+      // Then try the original timestamp with a fresh cache parameter
+      setTimeout(() => {
+        const cacheParam = Date.now();
+        setPreviewUrl(`https://i.ytimg.com/vi/${videoId}/mqdefault.jpg?t=${cacheParam}`);
+        
+        // Finally use our best quality option
+        setTimeout(() => {
+          setPreviewUrl(generatePreviewUrl(timestamp));
+        }, 100);
+      }, 100);
+      
+      // Show a notification about the fallback
+      toast({
+        title: "Using fallback method",
+        description: "Refreshing with direct YouTube thumbnails",
+        duration: 1500
+      });
+    } finally {
+      // Always clear loading state after a delay
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
+    }
   };
   
   return (
