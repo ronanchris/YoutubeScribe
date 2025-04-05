@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { 
@@ -17,9 +17,10 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { addCustomScreenshot } from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { Screenshot } from "@shared/schema";
-import { Check, Plus, Camera, RefreshCw } from "lucide-react";
+import { Check, Plus, Camera, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 
 // Helper function to format timestamp as MM:SS
 const formatTimestamp = (seconds: number): string => {
@@ -43,15 +44,22 @@ export default function VideoFrameScrubber({
 }: VideoFrameScrubbingProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [timestamp, setTimestamp] = useState(0);
+  const [pendingTimestamp, setPendingTimestamp] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
   const [previewUrl, setPreviewUrl] = useState("");
   const [description, setDescription] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [sliderLocked, setSliderLocked] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Set the maximum duration to 24 hours or the video duration, whichever is smaller
   const maxDuration = Math.min(videoDuration, 86400);
+  
+  // Determine step size for frame capture (larger step on mobile for easier selection)
+  const stepSize = isMobile ? 5 : 1;
   
   // Create a mutation for adding a custom screenshot
   const addScreenshotMutation = useMutation({
@@ -120,6 +128,45 @@ export default function VideoFrameScrubber({
     return `https://i.ytimg.com/vi_webp/${videoId}/sddefault.webp?v=${ts}&t=${cacheParam}`;
   };
   
+  // Debounced timestamp update function
+  const debouncedUpdateTimestamp = useCallback((newTimestamp: number) => {
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    // Set loading state
+    setIsLoading(true);
+    
+    // Update pending timestamp
+    setPendingTimestamp(newTimestamp);
+    
+    // After a short delay, update the actual timestamp
+    timeoutRef.current = setTimeout(() => {
+      setTimestamp(newTimestamp);
+      setPendingTimestamp(null);
+      timeoutRef.current = null;
+    }, isMobile ? 300 : 150); // Longer delay on mobile for stability
+  }, [isMobile]);
+  
+  // Handle moving to next/previous frame using step buttons
+  const stepTimestamp = useCallback((direction: 'prev' | 'next') => {
+    if (sliderLocked) return;
+    
+    const increment = direction === 'next' ? stepSize : -stepSize;
+    const newTimestamp = Math.max(0, Math.min(maxDuration, timestamp + increment));
+    
+    // Lock slider briefly to prevent jumps
+    setSliderLocked(true);
+    setIsLoading(true);
+    setTimestamp(newTimestamp);
+    
+    // Unlock after a delay
+    setTimeout(() => {
+      setSliderLocked(false);
+    }, 500);
+  }, [timestamp, maxDuration, stepSize, sliderLocked]);
+  
   // Update the preview when the timestamp changes
   useEffect(() => {
     // Show loading state
@@ -138,9 +185,15 @@ export default function VideoFrameScrubber({
   
   // Handle the slider change
   const handleSliderChange = (value: number[]) => {
-    // Set the new timestamp and indicate loading
-    setTimestamp(value[0]);
-    setIsLoading(true);
+    if (sliderLocked) return;
+    
+    // Round to step size for more predictable frame selection on mobile
+    const newValue = isMobile 
+      ? Math.round(value[0] / stepSize) * stepSize 
+      : value[0];
+      
+    // Use the debounced update function
+    debouncedUpdateTimestamp(newValue);
   };
 
   // Handle the manual timestamp input change
@@ -289,14 +342,47 @@ export default function VideoFrameScrubber({
               value={[timestamp]}
               min={0}
               max={maxDuration}
-              step={1}
+              step={isMobile ? stepSize : 1}
               onValueChange={handleSliderChange}
+              disabled={sliderLocked}
               className="w-full"
             />
+            
+            {/* Display pending timestamp if one exists */}
+            {pendingTimestamp !== null && (
+              <div className="text-xs text-center mt-1 text-slate-500">
+                Moving to {formatTimestamp(pendingTimestamp)}...
+              </div>
+            )}
+          </div>
+          
+          {/* Step Controls - More precise frame selection */}
+          <div className="flex justify-center gap-2 mt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => stepTimestamp('prev')}
+              disabled={timestamp === 0 || sliderLocked}
+              className="w-12 h-10"
+              title={`Step back ${stepSize} seconds`}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => stepTimestamp('next')}
+              disabled={timestamp >= maxDuration || sliderLocked}
+              className="w-12 h-10"
+              title={`Step forward ${stepSize} seconds`}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
           </div>
           
           {/* Controls */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between mt-4">
             <div className="flex items-center space-x-2">
               <Input
                 value={formatTimestamp(timestamp)}
@@ -304,13 +390,18 @@ export default function VideoFrameScrubber({
                 className="w-24 text-center"
                 placeholder="MM:SS"
               />
+              {isMobile && (
+                <div className="text-xs text-slate-500">
+                  Step Size: {stepSize}s
+                </div>
+              )}
             </div>
             
             <Button 
               variant="default" 
               className="flex-shrink-0"
               onClick={captureFrame}
-              disabled={addScreenshotMutation.isPending}
+              disabled={addScreenshotMutation.isPending || isLoading}
             >
               <Camera className="h-4 w-4 mr-1" />
               Capture Frame
