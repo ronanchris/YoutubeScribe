@@ -671,6 +671,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Fetch transcript for an existing summary - requires authentication
+  app.post("/api/summaries/:id/fetch-transcript", ensureAuthenticated, async (req, res) => {
+    try {
+      // Get summary ID from URL params
+      const summaryId = parseInt(req.params.id);
+      if (isNaN(summaryId)) {
+        return res.status(400).json({ message: "Invalid summary ID" });
+      }
+      
+      // Get the summary to check permissions and get video URL
+      const userId = req.user!.id;
+      const summary = await storage.getSummary(summaryId);
+      
+      if (!summary) {
+        return res.status(404).json({ message: "Summary not found" });
+      }
+      
+      // Check if the summary belongs to the user
+      if (summary.userId !== undefined && summary.userId !== userId && !req.user!.isAdmin) {
+        console.log(`Access denied: User ${userId} attempted to modify summary ${summaryId} belonging to user ${summary.userId}`);
+        return res.status(403).json({ message: "You don't have permission to modify this summary" });
+      }
+      
+      // Check if transcript already exists
+      if (summary.transcript) {
+        console.log(`Transcript already exists for summary ${summaryId}`);
+        const existingSummary = await storage.getSummaryWithScreenshots(summaryId);
+        return res.status(200).json(existingSummary);
+      }
+      
+      // Fetch the transcript
+      console.log(`Fetching transcript for video ${summary.videoUrl}`);
+      const transcript = await getVideoTranscript(summary.videoUrl);
+      
+      if (!transcript) {
+        return res.status(400).json({ 
+          message: "Could not extract transcript. The video might not have captions available." 
+        });
+      }
+      
+      console.log(`Got transcript, length: ${transcript.length}`);
+      
+      // Create video info object from existing summary
+      const videoInfo = {
+        videoId: summary.videoId,
+        videoUrl: summary.videoUrl,
+        videoTitle: summary.videoTitle,
+        videoAuthor: summary.videoAuthor,
+        videoDuration: summary.videoDuration
+      };
+      
+      // Update the summary with the transcript
+      const updatedSummary = await storage.updateSummary(summaryId, {
+        transcript: transcript
+      });
+      
+      if (!updatedSummary) {
+        return res.status(500).json({ message: "Failed to update summary with transcript" });
+      }
+      
+      // Get the full updated summary with screenshots
+      const finalSummary = await storage.getSummaryWithScreenshots(summaryId);
+      
+      res.status(200).json(finalSummary);
+    } catch (error) {
+      console.error("Error fetching transcript:", error);
+      
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to fetch transcript", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }
