@@ -125,3 +125,11 @@ export async function regenerateSummary(
   });
   return response.json();
 }
+
+// Fetch transcript for an existing summary that's missing one
+export async function fetchTranscriptForSummary(
+  summaryId: number
+): Promise<SummaryWithScreenshots> {
+  const response = await apiRequest("POST", `/api/summaries/${summaryId}/fetch-transcript`, {});
+  return response.json();
+}

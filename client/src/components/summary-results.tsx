@@ -176,13 +176,11 @@ export default function SummaryResults({ summary: initialSummary }: SummaryResul
               </div>
             </div>
             
-            {/* Prompt Selector and Transcript Display */}
-            {summary.transcript && (
-              <PromptSelector 
-                summary={summary} 
-                onSummaryUpdate={handleSummaryUpdate}
-              />
-            )}
+            {/* Prompt Selector and Transcript Display - Always show options */}
+            <PromptSelector 
+              summary={summary} 
+              onSummaryUpdate={handleSummaryUpdate}
+            />
           </div>
         </div>
 
