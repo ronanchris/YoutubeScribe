@@ -3,10 +3,11 @@ import { SummaryWithScreenshots, Screenshot } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Bookmark, CheckCheck } from "lucide-react";
+import { Copy, Bookmark, CheckCheck, Plus } from "lucide-react";
 import ScreenshotsGallery from "./screenshots-gallery";
 import GlossaryTags from "./glossary-tags";
 import PromptSelector from "./prompt-selector";
+import { useNavigate } from "@/hooks/use-navigate";
 
 interface SummaryResultsProps {
   summary: SummaryWithScreenshots;
@@ -14,6 +15,7 @@ interface SummaryResultsProps {
 
 export default function SummaryResults({ summary: initialSummary }: SummaryResultsProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [summary, setSummary] = useState<SummaryWithScreenshots>(initialSummary);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -181,6 +183,17 @@ export default function SummaryResults({ summary: initialSummary }: SummaryResul
               summary={summary} 
               onSummaryUpdate={handleSummaryUpdate}
             />
+            
+            {/* Create New Summary Button */}
+            <div className="mt-6">
+              <Button 
+                className="w-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center"
+                onClick={() => navigate('/')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Summary
+              </Button>
+            </div>
           </div>
         </div>
 
