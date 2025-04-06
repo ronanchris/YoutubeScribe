@@ -3,23 +3,19 @@ import { SummaryWithScreenshots, Screenshot } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Bookmark, CheckCheck, Camera, Plus } from "lucide-react";
+import { Copy, Bookmark, CheckCheck } from "lucide-react";
 import ScreenshotsGallery from "./screenshots-gallery";
-import VideoFrameScrubber from "./video-frame-scrubber";
-import TimestampCapture from "./timestamp-capture";
 import GlossaryTags from "./glossary-tags";
 
 interface SummaryResultsProps {
   summary: SummaryWithScreenshots;
-  initialShowScrubber?: boolean;
 }
 
-export default function SummaryResults({ summary, initialShowScrubber = false }: SummaryResultsProps) {
+export default function SummaryResults({ summary }: SummaryResultsProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [showFrameScrubber, setShowFrameScrubber] = useState(initialShowScrubber);
-  const [screenshots, setScreenshots] = useState<Screenshot[]>(summary.screenshots);
+  const screenshots = summary.screenshots;
 
   // Format structured outline for rendering
   const structuredOutline = summary.structuredOutline as { title: string; items: string[] }[];
@@ -51,15 +47,6 @@ export default function SummaryResults({ summary, initialShowScrubber = false }:
     toast({
       title: "Summary saved",
       description: "This summary is now in your history",
-    });
-  };
-  
-  // Handle adding new screenshots
-  const handleScreenshotAdded = (newScreenshot: Screenshot) => {
-    setScreenshots(prev => [...prev, newScreenshot]);
-    toast({
-      title: "Screenshot added",
-      description: "Custom screenshot has been added to this summary",
     });
   };
 
@@ -211,26 +198,7 @@ export default function SummaryResults({ summary, initialShowScrubber = false }:
                 </svg>
                 Screenshots ({screenshots.length})
               </h3>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs flex items-center gap-1"
-                onClick={() => setShowFrameScrubber(!showFrameScrubber)}
-              >
-                {showFrameScrubber ? "Hide Timestamp Capture" : "Add Timestamp Markers"}
-                {!showFrameScrubber && <Plus className="h-3 w-3" />}
-              </Button>
             </div>
-            
-            {/* Timestamp capture component */}
-            {showFrameScrubber && (
-              <TimestampCapture
-                videoId={summary.videoId}
-                videoDuration={summary.videoDuration}
-                summaryId={summary.id}
-                onScreenshotAdded={handleScreenshotAdded}
-              />
-            )}
             
             {/* Screenshots gallery */}
             <ScreenshotsGallery screenshots={screenshots} />
