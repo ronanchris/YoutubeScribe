@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { youtubeUrlSchema } from "@shared/schema";
 import { z } from "zod";
 import { getVideoTranscript, getVideoInfo, extractVideoId } from "./services/youtube";
-import { generateSummary, analyzeKeyTerms } from "./services/openai";
+import { generateSummary, regenerateSummary, analyzeKeyTerms, PROMPT_TEMPLATES } from "./services/openai";
 import { extractScreenshots, createCustomScreenshot, getYouTubeFrameAtTimestamp, processImage } from "./services/screenshot";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -119,6 +119,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(500).json({ 
         message: "Failed to generate summary", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+  
+  // Regenerate a summary using a different prompt - requires authentication
+  app.post("/api/summaries/:id/regenerate", ensureAuthenticated, async (req, res) => {
+    try {
+      // Validate request schema
+      const requestSchema = z.object({
+        promptType: z.enum(["standard", "detailed", "concise", "business", "academic"])
+      });
+      
+      // Validate request data
+      const { promptType } = requestSchema.parse(req.body);
+      
+      // Get summary ID from URL params
+      const summaryId = parseInt(req.params.id);
+      if (isNaN(summaryId)) {
+        return res.status(400).json({ message: "Invalid summary ID" });
+      }
+      
+      // Get the original summary with transcript
+      const originalSummary = await storage.getSummaryWithScreenshots(summaryId);
+      if (!originalSummary) {
+        return res.status(404).json({ message: "Summary not found" });
+      }
+      
+      // Check if user has permission to regenerate this summary
+      if (originalSummary.userId !== req.user!.id && !req.user!.isAdmin) {
+        return res.status(403).json({ message: "You don't have permission to regenerate this summary" });
+      }
+      
+      // Check if transcript exists
+      if (!originalSummary.transcript) {
+        return res.status(400).json({ message: "This summary doesn't have a stored transcript and cannot be regenerated" });
+      }
+      
+      console.log(`Regenerating summary ${summaryId} with prompt type: ${promptType}`);
+      
+      // Regenerate summary with new prompt
+      const regeneratedData = await regenerateSummary(
+        originalSummary.transcript,
+        {
+          videoId: originalSummary.videoId,
+          videoUrl: originalSummary.videoUrl,
+          videoTitle: originalSummary.videoTitle,
+          videoAuthor: originalSummary.videoAuthor,
+          videoDuration: originalSummary.videoDuration
+        },
+        promptType
+      );
+      
+      // Update the summary in storage
+      const updatedSummary = await storage.updateSummary(summaryId, {
+        keyPoints: regeneratedData.keyPoints,
+        summary: regeneratedData.summary,
+        structuredOutline: regeneratedData.structuredOutline,
+        fullPrompt: regeneratedData.fullPrompt
+      });
+      
+      if (!updatedSummary) {
+        return res.status(500).json({ message: "Failed to update summary" });
+      }
+      
+      // Get the full updated summary with screenshots
+      const finalSummary = await storage.getSummaryWithScreenshots(summaryId);
+      
+      res.status(200).json(finalSummary);
+    } catch (error) {
+      console.error("Error regenerating summary:", error);
+      
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to regenerate summary", 
         error: error instanceof Error ? error.message : "Unknown error" 
       });
     }

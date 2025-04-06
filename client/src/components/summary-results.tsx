@@ -6,13 +6,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Copy, Bookmark, CheckCheck } from "lucide-react";
 import ScreenshotsGallery from "./screenshots-gallery";
 import GlossaryTags from "./glossary-tags";
+import PromptSelector from "./prompt-selector";
 
 interface SummaryResultsProps {
   summary: SummaryWithScreenshots;
 }
 
-export default function SummaryResults({ summary }: SummaryResultsProps) {
+export default function SummaryResults({ summary: initialSummary }: SummaryResultsProps) {
   const { toast } = useToast();
+  const [summary, setSummary] = useState<SummaryWithScreenshots>(initialSummary);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
   const screenshots = summary.screenshots;
@@ -48,6 +50,11 @@ export default function SummaryResults({ summary }: SummaryResultsProps) {
       title: "Summary saved",
       description: "This summary is now in your history",
     });
+  };
+  
+  // Handle updates to the summary from the prompt selector
+  const handleSummaryUpdate = (updatedSummary: SummaryWithScreenshots) => {
+    setSummary(updatedSummary);
   };
 
   return (
@@ -168,6 +175,14 @@ export default function SummaryResults({ summary }: SummaryResultsProps) {
                 </ol>
               </div>
             </div>
+            
+            {/* Prompt Selector and Transcript Display */}
+            {summary.transcript && (
+              <PromptSelector 
+                summary={summary} 
+                onSummaryUpdate={handleSummaryUpdate}
+              />
+            )}
           </div>
         </div>
 

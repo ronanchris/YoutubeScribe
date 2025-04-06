@@ -114,3 +114,14 @@ export async function previewVideoFrame(
   const result = await response.json();
   return `data:image/jpeg;base64,${result.imageData}`;
 }
+
+// Regenerate a summary using a different prompt template
+export async function regenerateSummary(
+  summaryId: number,
+  promptType: 'standard' | 'detailed' | 'concise' | 'business' | 'academic'
+): Promise<SummaryWithScreenshots> {
+  const response = await apiRequest("POST", `/api/summaries/${summaryId}/regenerate`, {
+    promptType
+  });
+  return response.json();
+}

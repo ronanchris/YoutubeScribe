@@ -36,6 +36,7 @@ export interface IStorage {
   getUserSummaries(userId: number): Promise<Summary[]>;
   getUserSummariesWithScreenshots(userId: number): Promise<SummaryWithScreenshots[]>;
   getSummary(id: number): Promise<Summary | undefined>;
+  updateSummary(id: number, summaryData: Partial<Summary>): Promise<Summary | undefined>;
   getSummaryWithScreenshots(id: number): Promise<SummaryWithScreenshots | undefined>;
   createSummary(summary: InsertSummary): Promise<Summary>;
   createSummaryWithScreenshots(summary: InsertSummary, screenshots: InsertScreenshot[]): Promise<SummaryWithScreenshots>;
@@ -368,6 +369,21 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error creating summary with screenshots:', error);
       throw error; // Rethrow so the caller can handle it
+    }
+  }
+
+  async updateSummary(id: number, summaryData: Partial<Summary>): Promise<Summary | undefined> {
+    try {
+      const [updatedSummary] = await db
+        .update(summaries)
+        .set(summaryData)
+        .where(eq(summaries.id, id))
+        .returning();
+      
+      return updatedSummary;
+    } catch (error) {
+      console.error('Error updating summary:', error);
+      return undefined;
     }
   }
 

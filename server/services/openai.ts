@@ -10,6 +10,143 @@ const openai = new OpenAI({
 // Log OpenAI configuration status
 console.log("OpenAI client configured with API key:", process.env.OPENAI_API_KEY ? "Valid key provided" : "No key found");
 
+// Define a set of different prompt templates that users can choose from
+export const PROMPT_TEMPLATES = {
+  standard: `
+    You are an expert video content analyzer. Your task is to thoroughly analyze the transcript of a YouTube video
+    and produce a comprehensive, structured summary with SPECIFIC DETAILS from the content. Follow these guidelines:
+    
+    1. Extract the ACTUAL specific advice, strategies, techniques, or insights mentioned in the video - not generic statements about what the video "might" contain
+    2. Create a concise but SPECIFIC list of key points (5-10 bullet points) using REAL information from the transcript
+    3. Generate a detailed summary paragraph (3-5 paragraphs) focusing on CONCRETE information, not vague descriptions
+    4. Create a structured outline of the ACTUAL content with hierarchical sections
+    
+    The output must be in the following JSON format:
+    {
+      "keyPoints": ["Specific point 1 from the video", "Specific point 2 from the video", ...],
+      "summary": "Detailed summary text with SPECIFIC insights and content from the video...",
+      "structuredOutline": [
+        {
+          "title": "Actual Section From Content",
+          "items": ["Specific point 1 discussed", "Specific point 2 discussed", ...]
+        },
+        ...
+      ]
+    }
+    
+    IMPORTANT: Your summary should contain SPECIFIC INFORMATION that someone who hasn't watched the video would learn. Focus on extracting the ACTUAL advice, strategies, techniques, methods, or insights presented - not just saying that such things were discussed.
+
+    BAD EXAMPLE (too generic): "The video discusses strategies for success and perseverance."
+    GOOD EXAMPLE (specific): "Seth recommends the '1% improvement strategy': making tiny daily improvements that compound over time."
+    
+    Ensure the summary is accurate, specific, and follows a logical structure.
+  `,
+  
+  detailed: `
+    You are an expert video content analyst specializing in deep dives. Your task is to create a detailed, 
+    comprehensive analysis of this YouTube video transcript with SPECIFIC INFORMATION. Follow these guidelines:
+    
+    1. Create a thorough list of key points (8-12 bullet points) that contain SPECIFIC ADVICE, STRATEGIES, or INSIGHTS mentioned in the video
+    2. Generate a comprehensive summary (4-6 detailed paragraphs) that includes CONCRETE EXAMPLES and SPECIFIC METHODS mentioned by the speaker
+    3. Create a detailed structured outline with hierarchical sections based on the ACTUAL CONTENT, not generic topics
+    4. Highlight any technical terms, methodologies, or specialized knowledge EXPLICITLY DISCUSSED in the video
+    
+    The output must be in the following JSON format:
+    {
+      "keyPoints": ["Specific detailed point 1", "Specific detailed point 2", ...],
+      "summary": "Detailed summary with specific advice and concrete examples...",
+      "structuredOutline": [
+        {
+          "title": "Actual Section From Content",
+          "items": ["Specific detail 1", "Specific detail 2", ...]
+        },
+        ...
+      ]
+    }
+    
+    IMPORTANT: Include ACTUAL EXAMPLES, NUMBERS, STEP-BY-STEP PROCESSES, and SPECIFIC RECOMMENDATIONS mentioned in the video. Someone reading your summary should learn the SPECIFIC ADVICE given in the video, not just that "advice was given."
+    
+    BAD EXAMPLE (too vague): "The speaker shares insights about productivity techniques."
+    GOOD EXAMPLE (specific): "The speaker recommends the Pomodoro Technique: 25-minute focused work periods followed by 5-minute breaks, with a specific example of using this for writing tasks."
+    
+    Your analysis should thoroughly capture all important specifics, examples, and actionable advice.
+  `,
+  
+  concise: `
+    You are an expert at creating brief, high-impact summaries. Your task is to distill this YouTube video 
+    transcript into its most essential elements. Follow these guidelines:
+    
+    1. Create a focused list of only the most critical key points (3-5 bullet points)
+    2. Generate a concise executive summary (1-2 short paragraphs)
+    3. Create a minimal structured outline focusing only on the main sections
+    
+    The output must be in the following JSON format:
+    {
+      "keyPoints": ["point 1", "point 2", ...],
+      "summary": "Concise summary text...",
+      "structuredOutline": [
+        {
+          "title": "Section Title",
+          "items": ["Key point 1", "Key point 2", ...]
+        },
+        ...
+      ]
+    }
+    
+    Focus on brevity and clarity - your summary should capture only what's absolutely essential.
+  `,
+  
+  business: `
+    You are an expert business analyst. Your task is to analyze this YouTube video transcript 
+    through a business/professional lens. Follow these guidelines:
+    
+    1. Identify key business insights and actionable takeaways (5-8 bullet points)
+    2. Create an executive summary focused on business relevance (2-3 paragraphs)
+    3. Structure content in a business-friendly format with clear ROI implications
+    4. Highlight strategic implications, market trends, or business methodologies
+    
+    The output must be in the following JSON format:
+    {
+      "keyPoints": ["business insight 1", "actionable takeaway 2", ...],
+      "summary": "Business-focused summary text...",
+      "structuredOutline": [
+        {
+          "title": "Business Category",
+          "items": ["Strategic point 1", "Market consideration 2", ...]
+        },
+        ...
+      ]
+    }
+    
+    Ensure your analysis is professionally phrased and focused on practical business applications.
+  `,
+  
+  academic: `
+    You are an academic researcher and educator. Your task is to analyze this YouTube video transcript 
+    from an academic perspective. Follow these guidelines:
+    
+    1. Identify key theoretical concepts and research findings (5-10 bullet points)
+    2. Create a scholarly summary with proper academic framing (3-4 paragraphs)
+    3. Structure content hierarchically with attention to methodology and evidence
+    4. Note limitations, alternative viewpoints, or areas for further research
+    
+    The output must be in the following JSON format:
+    {
+      "keyPoints": ["theoretical concept 1", "research finding 2", ...],
+      "summary": "Academic summary text...",
+      "structuredOutline": [
+        {
+          "title": "Academic Category",
+          "items": ["Theoretical framework 1", "Methodological approach 2", ...]
+        },
+        ...
+      ]
+    }
+    
+    Use proper academic tone and analytical depth in your assessment.
+  `
+};
+
 /**
  * Generates a structured summary of a video transcript using OpenAI GPT-4o
  */
@@ -21,7 +158,8 @@ export async function generateSummary(
     videoTitle: string;
     videoAuthor: string;
     videoDuration: number;
-  }
+  },
+  promptType: keyof typeof PROMPT_TEMPLATES = "standard"
 ): Promise<InsertSummary> {
   try {
     // Truncate transcript if it's too long to fit in a single API call
@@ -30,30 +168,8 @@ export async function generateSummary(
       ? transcript.substring(0, maxTranscriptLength) + "... [transcript truncated due to length]"
       : transcript;
 
-    // Build the system prompt
-    const systemPrompt = `
-      You are an expert video content analyzer. Your task is to analyze the transcript of a YouTube video
-      and produce a comprehensive, structured summary. Follow these guidelines:
-      
-      1. Create a concise list of key points (5-10 bullet points)
-      2. Generate a detailed summary paragraph (3-5 paragraphs)
-      3. Create a structured outline of the content with hierarchical sections
-      
-      The output must be in the following JSON format:
-      {
-        "keyPoints": ["point 1", "point 2", ...],
-        "summary": "Detailed summary text...",
-        "structuredOutline": [
-          {
-            "title": "Section Title",
-            "items": ["Subsection or point 1", "Subsection or point 2", ...]
-          },
-          ...
-        ]
-      }
-      
-      Ensure the summary is accurate, concise, and follows a logical structure. Focus on the main concepts, arguments, and information presented.
-    `;
+    // Get the selected prompt template
+    const systemPrompt = PROMPT_TEMPLATES[promptType];
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -89,11 +205,84 @@ export async function generateSummary(
       keyPoints: parsedContent.keyPoints,
       summary: parsedContent.summary,
       structuredOutline: parsedContent.structuredOutline,
+      transcript: transcript, // Store the full transcript
+      fullPrompt: systemPrompt, // Store the full prompt used
     };
   } catch (error) {
     console.error("Error generating summary with OpenAI:", error);
     throw new Error(
       `Failed to generate summary: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  }
+}
+
+/**
+ * Regenerates a summary using a stored transcript and a different prompt template
+ * This function allows generating new summaries without making additional YouTube API calls
+ */
+export async function regenerateSummary(
+  transcript: string,
+  videoInfo: {
+    videoId: string;
+    videoUrl: string;
+    videoTitle: string;
+    videoAuthor: string;
+    videoDuration: number;
+  },
+  promptType: keyof typeof PROMPT_TEMPLATES
+): Promise<Omit<InsertSummary, 'transcript'>> {
+  // This function is nearly identical to generateSummary but doesn't return the transcript
+  // since we already have it stored and don't need to store it again
+  try {
+    // Truncate transcript if it's too long to fit in a single API call
+    const maxTranscriptLength = 14000; // Safe limit for context window
+    const truncatedTranscript = transcript.length > maxTranscriptLength
+      ? transcript.substring(0, maxTranscriptLength) + "... [transcript truncated due to length]"
+      : transcript;
+
+    // Get the selected prompt template
+    const systemPrompt = PROMPT_TEMPLATES[promptType];
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: `Here's the transcript of a YouTube video titled "${videoInfo.videoTitle}" by ${videoInfo.videoAuthor}:\n\n${truncatedTranscript}`,
+        },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2, // Lower temperature for more predictable, factual responses
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("Empty response from OpenAI API");
+    }
+
+    // Parse the JSON response
+    const parsedContent = JSON.parse(content);
+
+    // Build and return the summary object without the transcript
+    return {
+      videoId: videoInfo.videoId,
+      videoUrl: videoInfo.videoUrl,
+      videoTitle: videoInfo.videoTitle,
+      videoAuthor: videoInfo.videoAuthor,
+      videoDuration: videoInfo.videoDuration,
+      keyPoints: parsedContent.keyPoints,
+      summary: parsedContent.summary,
+      structuredOutline: parsedContent.structuredOutline,
+      fullPrompt: systemPrompt, // Store the prompt used
+    };
+  } catch (error) {
+    console.error("Error regenerating summary with OpenAI:", error);
+    throw new Error(
+      `Failed to regenerate summary: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 }

@@ -23,6 +23,8 @@ export const summaries = pgTable("summaries", {
   videoDuration: integer("video_duration").notNull().default(0), // Default to 0 if not provided
   keyPoints: text("key_points").array().notNull().default([]), // Default to empty array if not provided
   summary: text("summary").notNull(),
+  transcript: text("transcript").notNull().default(""), // Store the full transcript
+  fullPrompt: text("full_prompt").notNull().default(""), // Store the prompt used for generation
   structuredOutline: jsonb("structured_outline").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
