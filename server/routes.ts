@@ -694,11 +694,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to modify this summary" });
       }
       
-      // Check if transcript already exists
-      if (summary.transcript) {
+      // Check if we want to force refresh the transcript
+      const forceRefresh = req.query.refresh === 'true';
+      
+      // Check if transcript already exists and we're not forcing a refresh
+      if (summary.transcript && !forceRefresh) {
         console.log(`Transcript already exists for summary ${summaryId}`);
         const existingSummary = await storage.getSummaryWithScreenshots(summaryId);
         return res.status(200).json(existingSummary);
+      }
+      
+      if (forceRefresh) {
+        console.log(`Refreshing transcript for summary ${summaryId}`);
       }
       
       // Fetch the transcript

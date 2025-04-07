@@ -223,7 +223,7 @@ export default function SummaryResults({ summary: initialSummary }: SummaryResul
                     Create New Summary
                   </Button>
                   
-                  <TranscriptExporter summary={summary} />
+                  <TranscriptExporter summary={summary} onSummaryUpdate={handleSummaryUpdate} />
                 </div>
               </div>
             </div>

@@ -1,14 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SummaryWithScreenshots } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
+import axios from "axios";
 
 interface TranscriptExporterProps {
   summary: SummaryWithScreenshots;
+  onSummaryUpdate?: (updatedSummary: SummaryWithScreenshots) => void;
 }
 
-export default function TranscriptExporter({ summary }: TranscriptExporterProps) {
+export default function TranscriptExporter({ summary, onSummaryUpdate }: TranscriptExporterProps) {
   const [isExporting, setIsExporting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const downloadTranscript = () => {
     if (!summary.transcript) return;
@@ -35,16 +38,48 @@ export default function TranscriptExporter({ summary }: TranscriptExporterProps)
     }
   };
 
+  const refreshTranscript = async () => {
+    if (!summary.id) return;
+    
+    setIsRefreshing(true);
+    
+    try {
+      // Call the API endpoint with refresh=true query parameter
+      const response = await axios.post(`/api/summaries/${summary.id}/fetch-transcript?refresh=true`);
+      
+      // Update the summary with the new transcript
+      if (response.data && onSummaryUpdate) {
+        onSummaryUpdate(response.data);
+      }
+      
+      setIsRefreshing(false);
+    } catch (error) {
+      console.error("Failed to refresh transcript:", error);
+      setIsRefreshing(false);
+    }
+  };
+
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="ml-2"
-      onClick={downloadTranscript}
-      disabled={isExporting || !summary.transcript}
-    >
-      <Download className="h-4 w-4 mr-2" />
-      {isExporting ? "Downloading..." : "Download Transcript"}
-    </Button>
+    <div className="flex gap-2 justify-end">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={refreshTranscript}
+        disabled={isRefreshing}
+      >
+        <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+        {isRefreshing ? "Refreshing..." : "Refresh Transcript"}
+      </Button>
+      
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={downloadTranscript}
+        disabled={isExporting || !summary.transcript}
+      >
+        <Download className="h-4 w-4 mr-2" />
+        {isExporting ? "Downloading..." : "Download Transcript"}
+      </Button>
+    </div>
   );
 }
