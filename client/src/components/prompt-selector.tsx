@@ -102,7 +102,7 @@ export default function PromptSelector({ summary, onSummaryUpdate }: PromptSelec
   return (
     <Card className="mt-6 border border-slate-200 overflow-hidden">
       <div className="p-4 border-b border-slate-200 flex justify-between items-center">
-        <h3 className="text-md font-semibold text-slate-700">Advanced Options</h3>
+        <h3 className="text-lg font-semibold text-slate-700">Advanced Options</h3>
       </div>
       
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "transcript" | "regenerate" | "interactive")}>
@@ -120,13 +120,13 @@ export default function PromptSelector({ summary, onSummaryUpdate }: PromptSelec
           </div>
           <div className="bg-slate-50 p-3 rounded-md max-h-96 overflow-y-auto">
             {summary.transcript ? (
-              <pre className="text-xs whitespace-pre-wrap font-sans text-slate-700">
+              <pre className="text-sm whitespace-pre-wrap font-sans text-slate-700">
                 {summary.transcript}
               </pre>
             ) : (
-              <div className="text-sm text-slate-500 italic p-2">
-                <p>Transcript not available for this summary.</p>
-                <p className="mt-2">For newly created summaries, the full transcript will be stored and available here.</p>
+              <div className="text-base text-slate-600 p-4">
+                <p className="font-medium mb-2">Transcript not available</p>
+                <p className="mb-2">For newly created summaries, the full transcript will be stored and available here.</p>
               </div>
             )}
           </div>
@@ -231,10 +231,13 @@ export default function PromptSelector({ summary, onSummaryUpdate }: PromptSelec
                       key={promptType.id}
                       variant={selectedPrompt === promptType.id as any ? "default" : "outline"}
                       size="sm"
-                      className={`justify-start ${promptType.id === 'technical_ai' ? 'border-blue-400 hover:border-blue-500' : ''} ${selectedPrompt === promptType.id ? 'bg-primary-600' : ''}`}
+                      className={`justify-start text-sm sm:text-base ${promptType.id === 'technical_ai' ? 'border-blue-400 hover:border-blue-500' : ''} ${selectedPrompt === promptType.id ? 'bg-primary-600' : ''}`}
                       onClick={() => setSelectedPrompt(promptType.id as "standard" | "detailed" | "concise" | "business" | "academic" | "technical_ai")}
                     >
-                      {promptType.icon} {promptType.label}
+                      <span className="flex items-center">
+                        {promptType.icon} 
+                        <span className="ml-1">{promptType.label}</span>
+                      </span>
                     </Button>
                   ))}
                 </div>

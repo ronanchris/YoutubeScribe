@@ -93,6 +93,16 @@ export default function InteractiveTranscript({
   
   // Format transcript for better readability by breaking into paragraphs
   const formattedTranscript = useMemo(() => {
+    if (!transcript) {
+      return (
+        <div className="p-4 text-center">
+          <p className="text-base font-medium mb-2">No transcript available</p>
+          <p className="text-sm mb-2">This video may not have captions enabled, or they might be disabled by the content creator.</p>
+          <p className="text-sm">Please try another video with available captions.</p>
+        </div>
+      );
+    }
+    
     // First attempt to detect natural paragraphs based on pauses, periods, and newlines
     const paragraphs: string[] = [];
     let currentParagraph = "";
@@ -150,7 +160,7 @@ export default function InteractiveTranscript({
     <div className="relative mt-2">
       <div 
         ref={transcriptRef}
-        className="text-sm text-slate-600 p-6 bg-white border border-slate-200 rounded-md min-h-[300px] max-h-[450px] sm:max-h-[600px] md:max-h-[800px] overflow-y-auto"
+        className="text-base text-slate-600 p-6 bg-white border border-slate-200 rounded-md min-h-[300px] max-h-[500px] sm:max-h-[600px] md:max-h-[800px] overflow-y-auto"
         onMouseUp={handleTextSelection}
         onTouchEnd={handleTextSelection}
         onTouchCancel={handleTextSelection}
@@ -163,15 +173,16 @@ export default function InteractiveTranscript({
       {selection && selectionCoords && (
         <Button
           size="sm"
-          className="absolute flex items-center bg-green-600 text-white z-10 rounded-full shadow-lg"
+          className="absolute flex items-center bg-green-600 text-white z-10 rounded-full shadow-lg font-medium"
           style={{
             left: `${selectionCoords.x}px`,
             top: `${selectionCoords.y}px`,
-            padding: window.innerWidth < 640 ? '0.75rem 1rem' : '0.5rem 0.75rem', // Larger on mobile
+            padding: window.innerWidth < 640 ? '0.75rem 1.25rem' : '0.5rem 0.75rem', // Larger on mobile
+            fontSize: window.innerWidth < 640 ? '1rem' : '0.875rem', // Larger font on mobile
           }}
           onClick={addHighlightToKeyPoints}
         >
-          <PlusCircle className="h-4 w-4 mr-1" />
+          <PlusCircle className={`${window.innerWidth < 640 ? 'h-5 w-5' : 'h-4 w-4'} mr-2`} />
           Add to Key Points
         </Button>
       )}
@@ -191,7 +202,7 @@ export function TranscriptHighlighter({
   summary: SummaryWithScreenshots;
   onSummaryUpdate: (updatedSummary: SummaryWithScreenshots) => void;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true); // Start expanded by default
   const [viewMode, setViewMode] = useState<'compact' | 'full'>('compact');
   const { toast } = useToast();
   
@@ -237,13 +248,13 @@ export function TranscriptHighlighter({
   return (
     <div className="border border-slate-200 rounded-md overflow-hidden">
       <div className="bg-slate-50 p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center">
-        <h4 className="text-sm font-medium text-slate-700 mb-2 sm:mb-0">Interactive Transcript</h4>
+        <h4 className="text-base font-medium text-slate-700 mb-3 sm:mb-0">Interactive Transcript</h4>
         <div className="flex flex-wrap gap-2">
           {isExpanded && (
             <Button
               variant={viewMode === 'compact' ? "outline" : "default"}
               size="sm"
-              className={viewMode === 'compact' ? "border-green-400 text-green-700" : "bg-green-600 text-white"}
+              className={`w-full sm:w-auto ${viewMode === 'compact' ? "border-green-400 text-green-700" : "bg-green-600 text-white"}`}
               onClick={toggleViewMode}
             >
               {viewMode === 'compact' ? 'Compact View' : 'Full View'}
@@ -252,6 +263,7 @@ export function TranscriptHighlighter({
           <Button
             variant="outline"
             size="sm"
+            className="w-full sm:w-auto"
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? "Hide Transcript" : "Show Transcript"}
