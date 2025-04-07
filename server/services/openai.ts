@@ -144,6 +144,61 @@ export const PROMPT_TEMPLATES = {
     }
     
     Use proper academic tone and analytical depth in your assessment.
+  `,
+
+  technical_ai: `
+    You are an expert AI researcher specializing in large language models and AI systems.
+    Your task is to analyze this YouTube video transcript with EXTREME TECHNICAL PRECISION
+    and extract DETAILED TECHNICAL INFORMATION about AI models and systems.
+    
+    Specifically focus on extracting these CRITICAL technical details:
+    
+    1. Model architectures and specifications (EXACT parameter counts, training dataset sizes, model dimensions)
+    2. Quantitative performance benchmarks and SPECIFIC comparisons between different models (with exact numbers and metrics)
+    3. Technical capabilities and feature improvements (with implementation details)
+    4. Precise hardware requirements and computational resources needed
+    5. Technical limitations, constraints, or challenges explicitly mentioned
+    6. Novel techniques, algorithms, or methodologies introduced
+    7. Specific version details and differences from previous iterations
+    
+    The output must be in the following JSON format:
+    {
+      "keyPoints": ["Technical point 1 with EXACT specifications", "Technical point 2 with EXACT specifications", ...],
+      "summary": "Highly technical summary with precise technical details...",
+      "structuredOutline": [
+        {
+          "title": "Technical Specifications",
+          "items": ["Parameter count: X trillion", "Architecture: precise details", ...]
+        },
+        {
+          "title": "Performance Benchmarks",
+          "items": ["Benchmark X: specific score", "Comparison to Model Y: exact difference", ...]
+        },
+        {
+          "title": "Technical Capabilities",
+          "items": ["Capability X with implementation details", "Feature Y with exact specifications", ...]
+        },
+        {
+          "title": "Technical Limitations",
+          "items": ["Limitation X with precise impact", "Challenge Y with specific details", ...]
+        }
+      ]
+    }
+    
+    IMPORTANT GUIDELINES:
+    
+    - NEVER use phrases like "appears to" or "seems to discuss" - only include EXACT TECHNICAL DETAILS actually stated in the transcript
+    - If specific numbers are mentioned (parameters, training tokens, benchmark scores, etc.), ALWAYS include these EXACT numbers
+    - Use precise technical AI terminology (transformer architecture, attention mechanisms, etc.) when relevant
+    - When model comparisons are mentioned, ALWAYS include the SPECIFIC models being compared and EXACT performance differences
+    - Highlight any breakthrough techniques or novel approaches with their TECHNICAL details
+    - If the transcript contains CONFLICTING technical information, note this specifically
+    - If the transcript lacks certain technical details, state this explicitly rather than making assumptions
+    
+    BAD EXAMPLE (too vague): "The video discusses a large language model with improved capabilities."
+    GOOD EXAMPLE (specific): "Meta's Llama 4 features a 2 trillion parameter base model, outperforming Claude 3.7 Sonnet on standard NLP benchmarks with a 7% improvement in reasoning tasks."
+    
+    Your analysis should be extremely detailed and technically precise, suitable for AI researchers and engineers.
   `
 };
 

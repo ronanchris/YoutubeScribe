@@ -129,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Validate request schema
       const requestSchema = z.object({
-        promptType: z.enum(["standard", "detailed", "concise", "business", "academic"])
+        promptType: z.enum(["standard", "detailed", "concise", "business", "academic", "technical_ai"])
       });
       
       // Validate request data

@@ -118,7 +118,7 @@ export async function previewVideoFrame(
 // Regenerate a summary using a different prompt template
 export async function regenerateSummary(
   summaryId: number,
-  promptType: 'standard' | 'detailed' | 'concise' | 'business' | 'academic'
+  promptType: 'standard' | 'detailed' | 'concise' | 'business' | 'academic' | 'technical_ai'
 ): Promise<SummaryWithScreenshots> {
   const response = await apiRequest("POST", `/api/summaries/${summaryId}/regenerate`, {
     promptType

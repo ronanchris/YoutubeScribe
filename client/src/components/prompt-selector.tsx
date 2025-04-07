@@ -10,7 +10,8 @@ import {
   BookOpen, 
   MessageSquare, 
   Library,
-  Loader2 
+  Loader2,
+  Cpu
 } from "lucide-react";
 import { regenerateSummary, fetchTranscriptForSummary } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -26,11 +27,12 @@ const promptTypes = [
   { id: "concise", label: "Concise", icon: <MessageSquare className="h-4 w-4 mr-1" /> },
   { id: "business", label: "Business", icon: <Briefcase className="h-4 w-4 mr-1" /> },
   { id: "academic", label: "Academic", icon: <BookOpen className="h-4 w-4 mr-1" /> },
+  { id: "technical_ai", label: "AI Tech", icon: <Cpu className="h-4 w-4 mr-1" /> },
 ] as const;
 
 export default function PromptSelector({ summary, onSummaryUpdate }: PromptSelectorProps) {
   const [activeTab, setActiveTab] = useState<"transcript" | "regenerate">("transcript");
-  const [selectedPrompt, setSelectedPrompt] = useState<(typeof promptTypes)[number]["id"]>("standard");
+  const [selectedPrompt, setSelectedPrompt] = useState<"standard" | "detailed" | "concise" | "business" | "academic" | "technical_ai">("standard");
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isFetchingTranscript, setIsFetchingTranscript] = useState(false);
   const { toast } = useToast();
@@ -131,6 +133,7 @@ export default function PromptSelector({ summary, onSummaryUpdate }: PromptSelec
           <div className="mb-4">
             <p className="text-sm text-slate-500 mb-2">
               Select a prompt style and regenerate the summary without burning additional API tokens.
+              Try the new <span className="font-medium">AI Tech</span> prompt for videos about AI models like Llama, GPT, and Claude.
             </p>
             
             {!summary.transcript ? (
@@ -175,10 +178,10 @@ export default function PromptSelector({ summary, onSummaryUpdate }: PromptSelec
                   {promptTypes.map((promptType) => (
                     <Button
                       key={promptType.id}
-                      variant={selectedPrompt === promptType.id ? "default" : "outline"}
+                      variant={selectedPrompt === promptType.id as any ? "default" : "outline"}
                       size="sm"
                       className="justify-start"
-                      onClick={() => setSelectedPrompt(promptType.id)}
+                      onClick={() => setSelectedPrompt(promptType.id as "standard" | "detailed" | "concise" | "business" | "academic" | "technical_ai")}
                     >
                       {promptType.icon} {promptType.label}
                     </Button>
