@@ -19,30 +19,46 @@ export default function InteractiveTranscript({
   const [selectionCoords, setSelectionCoords] = useState<{ x: number, y: number } | null>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
   
-  // Handle text selection
+  // Handle text selection for both mouse and touch devices
   const handleTextSelection = () => {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || selection.toString().trim() === "") {
-      setSelection("");
-      setSelectionCoords(null);
-      return;
-    }
-    
-    const selectedText = selection.toString().trim();
-    setSelection(selectedText);
-    
-    // Get position for the floating button
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    
-    // Set position for the floating button - relative to the transcript container
-    if (transcriptRef.current) {
-      const containerRect = transcriptRef.current.getBoundingClientRect();
-      setSelectionCoords({
-        x: rect.right - containerRect.left - 60, // Position slightly to the left of end of selection
-        y: rect.top - containerRect.top - 30     // Position above the selection
-      });
-    }
+    // Small delay to ensure selection is complete (especially important for touch devices)
+    setTimeout(() => {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0 || selection.toString().trim() === "") {
+        setSelection("");
+        setSelectionCoords(null);
+        return;
+      }
+      
+      const selectedText = selection.toString().trim();
+      setSelection(selectedText);
+      
+      // Get position for the floating button
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      
+      // Set position for the floating button - relative to the transcript container
+      if (transcriptRef.current) {
+        const containerRect = transcriptRef.current.getBoundingClientRect();
+        
+        // For mobile devices, position the button in a more visible location
+        const isMobile = window.innerWidth < 640; // sm breakpoint in tailwind
+        
+        if (isMobile) {
+          // On mobile, center the button at the bottom of the selection
+          setSelectionCoords({
+            x: (rect.left + rect.right) / 2 - containerRect.left - 30, // Center horizontally
+            y: rect.bottom - containerRect.top + 20                   // Below the selection
+          });
+        } else {
+          // On desktop, position to the right of the selection
+          setSelectionCoords({
+            x: rect.right - containerRect.left - 60, // Position slightly to the left of end of selection
+            y: rect.top - containerRect.top - 30     // Position above the selection
+          });
+        }
+      }
+    }, 10); // Small delay to ensure selection is processed
   };
   
   // Add selected text to key points
@@ -134,9 +150,10 @@ export default function InteractiveTranscript({
     <div className="relative mt-2">
       <div 
         ref={transcriptRef}
-        className="text-sm text-slate-600 p-6 bg-white border border-slate-200 rounded-md max-h-[600px] md:max-h-[800px] overflow-y-auto"
+        className="text-sm text-slate-600 p-6 bg-white border border-slate-200 rounded-md min-h-[300px] max-h-[450px] sm:max-h-[600px] md:max-h-[800px] overflow-y-auto"
         onMouseUp={handleTextSelection}
         onTouchEnd={handleTextSelection}
+        onTouchCancel={handleTextSelection}
         style={{ position: "relative" }}
       >
         {formattedTranscript}
@@ -146,19 +163,20 @@ export default function InteractiveTranscript({
       {selection && selectionCoords && (
         <Button
           size="sm"
-          className="absolute flex items-center bg-primary z-10 rounded-full shadow-md"
+          className="absolute flex items-center bg-green-600 text-white z-10 rounded-full shadow-lg"
           style={{
             left: `${selectionCoords.x}px`,
             top: `${selectionCoords.y}px`,
+            padding: window.innerWidth < 640 ? '0.75rem 1rem' : '0.5rem 0.75rem', // Larger on mobile
           }}
           onClick={addHighlightToKeyPoints}
         >
           <PlusCircle className="h-4 w-4 mr-1" />
-          Add
+          Add to Key Points
         </Button>
       )}
       
-      <div className="text-xs text-slate-500 mt-2 italic">
+      <div className="text-xs text-slate-500 mt-2 italic px-2">
         Highlight any text above to add it to the Key Points
       </div>
     </div>
@@ -218,16 +236,17 @@ export function TranscriptHighlighter({
   
   return (
     <div className="border border-slate-200 rounded-md overflow-hidden">
-      <div className="bg-slate-50 p-3 flex justify-between items-center">
-        <h4 className="text-sm font-medium text-slate-700">Interactive Transcript</h4>
-        <div className="flex space-x-2">
+      <div className="bg-slate-50 p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center">
+        <h4 className="text-sm font-medium text-slate-700 mb-2 sm:mb-0">Interactive Transcript</h4>
+        <div className="flex flex-wrap gap-2">
           {isExpanded && (
             <Button
-              variant="outline"
+              variant={viewMode === 'compact' ? "outline" : "default"}
               size="sm"
+              className={viewMode === 'compact' ? "border-green-400 text-green-700" : "bg-green-600 text-white"}
               onClick={toggleViewMode}
             >
-              {viewMode === 'compact' ? 'Full View' : 'Compact View'}
+              {viewMode === 'compact' ? 'Compact View' : 'Full View'}
             </Button>
           )}
           <Button
@@ -241,8 +260,8 @@ export function TranscriptHighlighter({
       </div>
       
       {isExpanded && (
-        <div className={`border-t border-slate-200 ${viewMode === 'full' ? 'w-full px-4' : ''}`}>
-          <div className={viewMode === 'full' ? 'max-w-4xl mx-auto' : ''}>
+        <div className={`border-t border-slate-200 ${viewMode === 'full' ? 'w-full px-2 sm:px-4' : 'px-2'}`}>
+          <div className={viewMode === 'full' ? 'w-full mx-auto' : ''}>
             <InteractiveTranscript
               transcript={summary.transcript}
               onHighlightAdd={handleAddHighlight}

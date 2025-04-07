@@ -180,8 +180,12 @@ export default function PromptSelector({ summary, onSummaryUpdate }: PromptSelec
           <div className="mb-4">
             <p className="text-sm text-slate-500 mb-2">
               Select a prompt style and regenerate the summary without burning additional API tokens.
-              Try the new <span className="font-medium">AI Tech</span> prompt for videos about AI models like Llama, GPT, and Claude.
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mb-3">
+              <p className="text-sm text-blue-700">
+                <strong>New!</strong> Try the <strong>AI Tech</strong> prompt for videos about AI models like Llama, GPT, and Claude.
+              </p>
+            </div>
             
             {!summary.transcript ? (
               <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">
@@ -221,13 +225,13 @@ export default function PromptSelector({ summary, onSummaryUpdate }: PromptSelec
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
                   {promptTypes.map((promptType) => (
                     <Button
                       key={promptType.id}
                       variant={selectedPrompt === promptType.id as any ? "default" : "outline"}
                       size="sm"
-                      className="justify-start"
+                      className={`justify-start ${promptType.id === 'technical_ai' ? 'border-blue-400 hover:border-blue-500' : ''} ${selectedPrompt === promptType.id ? 'bg-primary-600' : ''}`}
                       onClick={() => setSelectedPrompt(promptType.id as "standard" | "detailed" | "concise" | "business" | "academic" | "technical_ai")}
                     >
                       {promptType.icon} {promptType.label}
