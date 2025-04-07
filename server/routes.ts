@@ -210,10 +210,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestSchema = z.object({
         timestamp: z.number().min(0).max(86400), // Maximum 24 hours
         description: z.string().optional(),
+        svgContent: z.string().optional(), // Optional SVG content
       });
       
       // Validate request data
-      const { timestamp, description } = requestSchema.parse(req.body);
+      const { timestamp, description, svgContent } = requestSchema.parse(req.body);
       
       // Get summary ID from URL params
       const summaryId = parseInt(req.params.id);
@@ -237,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create the custom screenshot
       const videoId = summary.videoId;
-      const screenshot = await createCustomScreenshot(videoId, timestamp, description);
+      const screenshot = await createCustomScreenshot(videoId, timestamp, description, svgContent);
       
       // Set the summary ID
       screenshot.summaryId = summaryId;

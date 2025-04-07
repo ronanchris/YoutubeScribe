@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect, useRef } from "react";
+import rcLogoPath from "../../assets/rc-logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,24 +58,11 @@ export default function Header() {
         <Link href="/"
           className="text-xl font-bold text-slate-800 flex items-center cursor-pointer"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-6 w-6 text-primary mr-2"
-          >
-            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
-            <line x1="10" y1="2" x2="10" y2="22" />
-            <line x1="10" y1="12" x2="22" y2="12" />
-            <path d="M14 6l2 2l-2 2" />
-            <path d="M14 18l2-2l-2-2" />
-            <path d="M20 14l-2 2l-2-2" />
-            <path d="M20 8l-2-2l-2 2" />
-          </svg>
+          <img 
+            src={rcLogoPath} 
+            alt="RC Logo" 
+            className="h-8 w-auto mr-2"
+          />
           <span className={isMobile ? "sr-only" : ""}>YTSummarizer</span>
         </Link>
 

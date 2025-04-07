@@ -92,7 +92,9 @@ export default function ScreenshotsGallery({ screenshots, showScrubber = false }
                 onClick={() => setSelectedImage(screenshot)}
               >
                 <img
-                  src={`data:image/jpeg;base64,${screenshot.imageUrl}`}
+                  src={screenshot.imageUrl.includes('<svg') 
+                    ? `data:image/svg+xml;base64,${screenshot.imageUrl}` 
+                    : `data:image/jpeg;base64,${screenshot.imageUrl}`}
                   alt={screenshot.description || "Video screenshot"}
                   className="w-full h-40 sm:h-32 object-cover rounded-lg border border-slate-200 mb-1"
                   loading="lazy"
@@ -105,7 +107,9 @@ export default function ScreenshotsGallery({ screenshots, showScrubber = false }
             <DialogContent className="sm:max-w-md max-w-[95vw] w-full p-3 sm:p-6">
               <div className="text-center">
                 <img
-                  src={`data:image/jpeg;base64,${screenshot.imageUrl}`}
+                  src={screenshot.imageUrl.includes('<svg') 
+                    ? `data:image/svg+xml;base64,${screenshot.imageUrl}` 
+                    : `data:image/jpeg;base64,${screenshot.imageUrl}`}
                   alt={screenshot.description || "Video screenshot"}
                   className="max-w-full rounded-md mx-auto max-h-[50vh] sm:max-h-[60vh] object-contain"
                 />

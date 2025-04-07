@@ -106,19 +106,29 @@ export async function getYouTubeFrameAtTimestamp(videoId: string, timestamp: num
  * @param videoId YouTube video ID
  * @param timestamp Timestamp in seconds
  * @param description Optional user-provided description
+ * @param svgContent Optional SVG content to use instead of a video frame
  * @returns Prepared screenshot object ready to be saved
  */
 export async function createCustomScreenshot(
   videoId: string, 
   timestamp: number, 
-  description?: string
+  description?: string,
+  svgContent?: string
 ): Promise<InsertScreenshot> {
   try {
-    // Get the frame at the specified timestamp
-    const imageBuffer = await getYouTubeFrameAtTimestamp(videoId, timestamp);
+    let processedImage: Buffer;
     
-    // Process the image with our enhancement pipeline
-    const processedImage = await processImage(imageBuffer, timestamp);
+    // If SVG content is provided, use it directly
+    if (svgContent) {
+      // For SVG content, we don't process it further - just use it as-is
+      processedImage = Buffer.from(svgContent);
+    } else {
+      // Otherwise get the frame from YouTube
+      const imageBuffer = await getYouTubeFrameAtTimestamp(videoId, timestamp);
+      
+      // Process the image with our enhancement pipeline
+      processedImage = await processImage(imageBuffer, timestamp);
+    }
     
     // Convert to base64 for storage
     const base64Image = processedImage.toString('base64');
@@ -192,9 +202,20 @@ export async function extractScreenshots(youtubeUrl: string): Promise<InsertScre
 /**
  * Processes an image to enhance/detect text and diagrams
  * This adds simple visual enhancements to highlight text and diagrams
+ * Now with SVG support
  */
 export async function processImage(imageBuffer: Buffer, timestamp?: number): Promise<Buffer> {
   try {
+    // First check if this might be an SVG by looking at the first few bytes
+    const isSvg = imageBuffer.slice(0, 100).toString().toLowerCase().includes('<svg');
+    
+    // If it's an SVG, return it as-is (SVG is already a vector format that displays well)
+    if (isSvg) {
+      console.log('SVG detected, returning without modification');
+      return imageBuffer;
+    }
+    
+    // For regular images, proceed with canvas processing
     // Load the image
     const image = await loadImage(imageBuffer);
     

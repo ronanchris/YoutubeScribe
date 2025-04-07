@@ -384,3 +384,39 @@ export async function acceptInvitation(token: string, password: string) {
     throw error;
   }
 }
+
+/**
+ * Add a custom screenshot to a summary
+ * @param summaryId The ID of the summary to add the screenshot to
+ * @param timestamp The timestamp in seconds where the screenshot should be captured
+ * @param description Optional description for the screenshot
+ * @param svgContent Optional SVG content to use instead of a video frame
+ * @returns The created screenshot
+ */
+export async function addCustomScreenshot(
+  summaryId: number, 
+  timestamp: number, 
+  description?: string,
+  svgContent?: string
+) {
+  try {
+    const response = await apiRequest(`/api/summaries/${summaryId}/screenshots`, {
+      method: 'POST',
+      body: JSON.stringify({ 
+        timestamp, 
+        description,
+        svgContent
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to add screenshot: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error adding custom screenshot:', error);
+    throw error;
+  }
+}
