@@ -8,6 +8,7 @@ import ScreenshotsGallery from "./screenshots-gallery";
 import GlossaryTags from "./glossary-tags";
 import PromptSelector from "./prompt-selector";
 import TranscriptExporter from "./transcript-exporter";
+import TokenUsageDisplay from "./token-usage-display";
 import { useNavigate } from "@/hooks/use-navigate";
 
 interface SummaryResultsProps {
@@ -201,6 +202,11 @@ export default function SummaryResults({ summary: initialSummary }: SummaryResul
               </div>
             </div>
             
+            {/* Token Usage Display */}
+            {summary.tokenUsage && Object.keys(summary.tokenUsage).length > 0 && (
+              <TokenUsageDisplay tokenUsage={summary.tokenUsage} />
+            )}
+            
             {/* Advanced Options Section */}
             <div className="border border-slate-200 rounded-md p-4 bg-slate-50">
               <h3 className="text-md font-semibold text-slate-700 mb-3">Advanced Options</h3>
@@ -307,6 +313,41 @@ function generateMarkdown(summary: SummaryWithScreenshots): string {
   summary.screenshots.forEach(screenshot => {
     markdown += `- ${screenshot.description} (${formatTimestamp(screenshot.timestamp)})\n`;
   });
+  
+  // Add token usage information if available
+  if (summary.tokenUsage && Object.keys(summary.tokenUsage).length > 0) {
+    const tokenUsage = summary.tokenUsage as any; // Use type assertion for easier access
+    
+    markdown += `\n## AI Processing Information\n`;
+    markdown += `- Model: ${tokenUsage.model || "gpt-4o"}\n`;
+    markdown += `- Prompt Type: ${tokenUsage.prompt_type || "standard"}\n`;
+    
+    // Handle total tokens
+    if (typeof tokenUsage.total_tokens === 'number') {
+      markdown += `- Total Tokens: ${tokenUsage.total_tokens.toLocaleString()}\n`;
+    } else {
+      markdown += `- Total Tokens: N/A\n`;
+    }
+    
+    // Handle transcript length information
+    if (typeof tokenUsage.transcript_length === 'number') {
+      markdown += `- Transcript Length: ${tokenUsage.transcript_length.toLocaleString()} characters\n`;
+      
+      if (tokenUsage.was_truncated && typeof tokenUsage.truncated_length === 'number') {
+        markdown += `  (truncated to ${tokenUsage.truncated_length.toLocaleString()} characters)\n`;
+      }
+    }
+    
+    // Format the cost information
+    if (typeof tokenUsage.total_cost === 'number') {
+      const costStr = tokenUsage.total_cost.toLocaleString('en-US', {
+        style: 'currency', 
+        currency: 'USD',
+        minimumFractionDigits: 6
+      });
+      markdown += `- Estimated API Cost: ${costStr}\n`;
+    }
+  }
   
   markdown += `\nURL: ${summary.videoUrl}\n`;
   

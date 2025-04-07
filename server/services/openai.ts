@@ -210,6 +210,28 @@ export const PROMPT_TEMPLATES = {
   `
 };
 
+// Helper function to calculate token pricing
+function calculateTokenCost(tokenUsage: { prompt_tokens: number, completion_tokens: number, total_tokens: number }): {
+  prompt_cost: number;
+  completion_cost: number;
+  total_cost: number;
+} {
+  // GPT-4o pricing (as of April 2025)
+  // Input: $5 per 1M tokens ($0.000005 per token)
+  // Output: $15 per 1M tokens ($0.000015 per token)
+  const PROMPT_COST_PER_TOKEN = 0.000005;
+  const COMPLETION_COST_PER_TOKEN = 0.000015;
+  
+  const promptCost = tokenUsage.prompt_tokens * PROMPT_COST_PER_TOKEN;
+  const completionCost = tokenUsage.completion_tokens * COMPLETION_COST_PER_TOKEN;
+  
+  return {
+    prompt_cost: parseFloat(promptCost.toFixed(6)),
+    completion_cost: parseFloat(completionCost.toFixed(6)),
+    total_cost: parseFloat((promptCost + completionCost).toFixed(6))
+  };
+}
+
 /**
  * Generates a structured summary of a video transcript using OpenAI GPT-4o
  */
@@ -257,8 +279,23 @@ export async function generateSummary(
 
     // Parse the JSON response
     const parsedContent = JSON.parse(content);
+    
+    // Extract token usage and calculate cost
+    const tokenUsage = response.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+    const tokenCost = calculateTokenCost(tokenUsage);
+    
+    // Combine token usage and cost information
+    const usageInfo = {
+      ...tokenUsage,
+      ...tokenCost,
+      transcript_length: transcript.length,
+      truncated_length: truncatedTranscript.length,
+      was_truncated: transcript.length > maxTranscriptLength,
+      model: "gpt-4o",
+      prompt_type: promptType
+    };
 
-    // Build and return the summary object
+    // Build and return the summary object with token usage
     return {
       videoId: videoInfo.videoId,
       videoUrl: videoInfo.videoUrl,
@@ -270,6 +307,7 @@ export async function generateSummary(
       structuredOutline: parsedContent.structuredOutline,
       transcript: transcript, // Store the full transcript
       fullPrompt: systemPrompt, // Store the full prompt used
+      tokenUsage: usageInfo, // Store token usage information
     };
   } catch (error) {
     console.error("Error generating summary with OpenAI:", error);
@@ -329,8 +367,23 @@ export async function regenerateSummary(
 
     // Parse the JSON response
     const parsedContent = JSON.parse(content);
+    
+    // Extract token usage and calculate cost
+    const tokenUsage = response.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+    const tokenCost = calculateTokenCost(tokenUsage);
+    
+    // Combine token usage and cost information
+    const usageInfo = {
+      ...tokenUsage,
+      ...tokenCost,
+      transcript_length: transcript.length,
+      truncated_length: truncatedTranscript.length,
+      was_truncated: transcript.length > maxTranscriptLength,
+      model: "gpt-4o",
+      prompt_type: promptType
+    };
 
-    // Build and return the summary object without the transcript
+    // Build and return the summary object without the transcript but with token usage
     return {
       videoId: videoInfo.videoId,
       videoUrl: videoInfo.videoUrl,
@@ -341,6 +394,7 @@ export async function regenerateSummary(
       summary: parsedContent.summary,
       structuredOutline: parsedContent.structuredOutline,
       fullPrompt: systemPrompt, // Store the prompt used
+      tokenUsage: usageInfo, // Store token usage information
     };
   } catch (error) {
     console.error("Error regenerating summary with OpenAI:", error);

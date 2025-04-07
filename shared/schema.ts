@@ -26,6 +26,7 @@ export const summaries = pgTable("summaries", {
   transcript: text("transcript").notNull().default(""), // Store the full transcript
   fullPrompt: text("full_prompt").notNull().default(""), // Store the prompt used for generation
   structuredOutline: jsonb("structured_outline").notNull(),
+  tokenUsage: jsonb("token_usage").default({}).notNull(), // Store OpenAI token usage information
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -97,7 +98,23 @@ export type Screenshot = typeof screenshots.$inferSelect;
 
 export type YoutubeUrlInput = z.infer<typeof youtubeUrlSchema>;
 
+// Token usage interface
+export interface TokenUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  prompt_cost: number;
+  completion_cost: number;
+  total_cost: number;
+  transcript_length?: number;
+  truncated_length?: number;
+  was_truncated?: boolean;
+  model?: string;
+  prompt_type?: string;
+}
+
 // Types for API responses
 export type SummaryWithScreenshots = Summary & {
   screenshots: Screenshot[];
+  tokenUsage: TokenUsage;
 };
