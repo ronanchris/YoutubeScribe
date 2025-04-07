@@ -1,0 +1,78 @@
+You're absolutely right. My overview missed several important assets in our project. Let me provide a more comprehensive list of additional assets and important files that would be valuable to include in our documentation:
+
+Server-side Assets
+Server Services:
+
+server/services/openai.ts - Handles integration with OpenAI API for generating summaries
+server/services/screenshot.ts - Manages screenshot generation and processing
+server/services/youtube.ts - Handles YouTube video data extraction and transcript retrieval
+Authentication:
+
+server/auth.ts - Implements user authentication and session management
+Database Connection:
+
+server/db.ts - Manages database connections with PostgreSQL
+server/storage.ts - Implements the storage interface for database operations
+API Routes:
+
+server/routes.ts - Defines all API endpoints for client-server communication
+Database Assets
+Schema Definition:
+
+shared/schema.ts - Contains all database table definitions, relations, and type definitions
+Migrations:
+
+migrations/ - Contains database migration files for schema changes
+migrations/meta/ - Contains metadata for migrations
+Scripts and Utilities
+Database Management:
+
+scripts/backup-db.js - Script for creating database backups
+scripts/restore-db.js - Script for restoring database from backups
+scripts/db-tools.sh - Shell script interface for backup/restore operations
+Configuration Files:
+
+drizzle.config.ts - Configuration for Drizzle ORM
+vite.config.ts - Configuration for Vite bundler
+tailwind.config.ts - Configuration for Tailwind CSS
+postcss.config.js - Configuration for PostCSS
+tsconfig.json - TypeScript configuration
+Client-side Components and Hooks
+Core Components:
+
+client/src/components/url-form.tsx - Form for entering YouTube URLs
+client/src/components/summary-results.tsx - Displays summary results
+client/src/components/screenshots-gallery.tsx - Gallery for viewing video screenshots
+client/src/components/video-frame-scrubber.tsx - UI for scrubbing through video frames
+client/src/components/timestamp-capture.tsx - Component for capturing timestamps
+Custom Hooks:
+
+client/src/hooks/use-auth.tsx - Authentication hook for user session management
+client/src/hooks/use-toast.ts - Hook for displaying toast notifications
+client/src/hooks/use-navigate.ts - Navigation hook for page routing
+client/src/hooks/use-mobile.tsx - Hook for detecting mobile devices
+Pages:
+
+client/src/pages/auth-page.tsx - Authentication page for login/register
+client/src/pages/home.tsx - Home page with URL input form
+client/src/pages/history.tsx - History page showing past summaries
+client/src/pages/admin.tsx - Admin page for user management
+client/src/pages/accept-invitation.tsx - Page for accepting user invitations
+Backup System
+Backup Files:
+
+backups/ - Directory containing SQL backup files with timestamps
+Example: backups/youtube-scribe-backup-2025-04-07-00-28-44.sql - Example backup file
+Purpose of Backups:
+
+Backups are SQL dumps of the entire PostgreSQL database
+They preserve all user data, summaries, and screenshots
+They allow for disaster recovery in case of data loss
+They enable migration between environments (development to production)
+Documentation
+Documentation Files:
+docs/USER_GUIDE.md - User guide for application usage
+docs/DATABASE_GUIDE.md - Guide for database operations
+docs/DATABASE_TOOLS.md - Documentation for database backup/restore tools
+Including these additional assets in our documentation would provide a much more comprehensive understanding of the project structure, dependencies, and functionality.
+
