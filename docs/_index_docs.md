@@ -29,6 +29,7 @@ This index provides a comprehensive guide to all documentation files for the You
 ## Development Guidelines
 
 - [**REPLIT_AGENT_RULES.md**](./REPLIT_AGENT_RULES.md) - Rules and guidelines for Replit AI agents working on this project
+- [**FIGMA_IMPLEMENTATION.md**](./FIGMA_IMPLEMENTATION.md) - Guide for implementing Figma designs into React components
 
 ## Document Relationships
 
@@ -82,3 +83,4 @@ This index provides a comprehensive guide to all documentation files for the You
 | Understand user permissions | [ROLES_AND_PERMISSIONS.md](./ROLES_AND_PERMISSIONS.md) |
 | Check project dependencies | [DEPENDENCIES.md](./DEPENDENCIES.md) |
 | Develop with Replit AI | [REPLIT_AGENT_RULES.md](./REPLIT_AGENT_RULES.md) |
+| Implement Figma designs | [FIGMA_IMPLEMENTATION.md](./FIGMA_IMPLEMENTATION.md) |
