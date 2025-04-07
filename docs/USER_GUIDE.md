@@ -1,6 +1,8 @@
 # YoutubeScribe User Guide
 
-Welcome to YoutubeScribe, an AI-powered YouTube video summarization tool. This guide will help you understand how to use all features effectively.
+Welcome to YoutubeScribe, an AI-powered YouTube video summarization tool. This guide will help you understand how to use the application effectively.
+
+> **Note**: If you are an administrator, please also refer to the [Administrator Guide](ADMIN_GUIDE.md) for additional functionality.
 
 ## Table of Contents
 
@@ -8,9 +10,9 @@ Welcome to YoutubeScribe, an AI-powered YouTube video summarization tool. This g
 2. [Creating Summaries](#creating-summaries)
 3. [Viewing History](#viewing-history)
 4. [Managing Your Account](#managing-your-account)
-5. [Administrator Functions](#administrator-functions)
-6. [Working with Summaries](#working-with-summaries)
-7. [Troubleshooting](#troubleshooting)
+5. [Working with Summaries](#working-with-summaries)
+6. [Troubleshooting](#troubleshooting)
+7. [Data Management](#data-management)
 
 ## Getting Started
 
@@ -26,7 +28,6 @@ The main navigation menu provides access to all key functions:
 
 - **Home**: Create new video summaries
 - **History**: View your previously created summaries
-- **Admin**: (Administrators only) Manage users and view all summaries
 
 ## Creating Summaries
 
@@ -51,22 +52,6 @@ The History page shows all summaries you've created:
 - Change your password through the profile settings
 - Manage your notification preferences
 - View your usage statistics
-
-## Administrator Functions
-
-Administrators have additional capabilities:
-
-### User Management
-
-- View all registered users
-- Create invitation links for new users
-- Promote users to administrator status
-- Disable user accounts if needed
-
-### Content Oversight
-
-- View summaries created by all users
-- Monitor system usage and performance
 
 ## Working with Summaries
 
@@ -106,8 +91,29 @@ After a summary is generated, you can:
 
 ## Data Management
 
-YoutubeScribe stores all your summaries in a database. For data consistency across different environments:
+YoutubeScribe stores all your summaries in a database. Here's what you need to know:
 
-- Regular backups are performed to prevent data loss
-- If you're using both development and production environments, be aware that they use separate databases
-- See the [Database Maintenance](../README.md#database-maintenance) section in the README for more details
+### Data Consistency
+
+- The application automatically synchronizes data across different devices
+- When you make changes on one device, they will appear on your other devices after refreshing
+- The system automatically refreshes data when a browser tab regains focus
+
+### Data Privacy
+
+- Your summaries are private and only visible to you
+- Administrators can access summaries for support purposes
+- Data is stored securely in the system database
+
+### Data Export
+
+- You can export your summaries in various formats:
+  - Markdown (for documentation)
+  - Plain text (for simple sharing)
+  - HTML (for web publishing)
+
+### Data Retention
+
+- Your summaries are retained indefinitely unless you delete them
+- Deleted summaries cannot be recovered by users
+- Contact an administrator if you need to recover accidentally deleted content

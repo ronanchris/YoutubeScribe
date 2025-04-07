@@ -4,102 +4,99 @@ This document outlines the deployment requirements for the YoutubeScribe project
 
 ## 1. Runtime Environment
 * **Language:** Node.js
-* **Version:** >=18.0.0 (Recommended: 20.x)
-* **Package Manager:** npm
+* **Version:** 20.x or higher
 
 ## 2. System Dependencies
-* **PostgreSQL:** Required for database storage
-* **Node.js build tools:** Required for native dependencies
+* PostgreSQL 14.x or higher (for database storage)
+* None for the application itself (all dependencies are Node.js packages)
 
 ## 3. Application Type
-* **Type:** Full-stack web application (React + Express)
-* **Entry Point:** Workflow: "Start application" which runs `npm run dev`
+* **Type:** Express web server with React frontend
+* **Entry Point:** `npm start` (production) or `npm run dev` (development)
 * **Notes:** Requires a persistent web server
 
 ## 4. Data Storage
-* **Type:** PostgreSQL database
+* **Type:** PostgreSQL
 * **Details:** 
-  * Stores users, summaries, and screenshots
+  * Connects to PostgreSQL database specified in DATABASE_URL environment variable
   * Uses Drizzle ORM for database operations
-  * Schema defined in `shared/schema.ts`
-* **Persistence:** Database content must persist between deployments
+  * Stores user accounts, video summaries, and screenshot data
+* **Persistence:** Data must persist between deployments
 * **Database:** PostgreSQL >= 14
 
 ## 5. External Services & Networking
 * **Services:** 
-  * OpenAI API: For AI-powered summarization
-  * YouTube data (public APIs): For video metadata and transcripts
+  * OpenAI API (for AI-powered summarization)
+  * YouTube oEmbed API (for video metadata)
 * **Networking:** 
-  * Requires outbound HTTPS access
-  * Inbound access on the application port (default: 5000)
+  * Requires outbound HTTPS access to external APIs
+  * Web server listens on port specified by PORT environment variable (default: 3000)
 
 ## 6. Secrets Management
 * **Method:** Environment Variables
-* **Details:** The following environment variables are required:
+* **Details:** 
   * `DATABASE_URL` - PostgreSQL connection string
-  * `OPENAI_API_KEY` - API key for OpenAI services
   * `SESSION_SECRET` - Secret for session encryption
+  * `OPENAI_API_KEY` - OpenAI API key
+  * `NODE_ENV` - Environment setting (production/development)
 
 ## 7. Resource Needs (Estimate)
-* **CPU:** Medium (Higher during summarization operations)
+* **CPU:** Medium (higher during summary generation)
 * **RAM:** Medium (1-2GB)
-* **Disk:** Low (mostly for code and logs, database size depends on usage)
+* **Disk:** Moderate (primarily for database storage and logs)
 
-## 8. Build Process
-* **Development:**
-  * Use Replit workflow: "Start application"
-* **Production:**
-  ```bash
-  npm install
-  npm run build
-  npm start
-  ```
+## 8. Deployment Options
 
-## 9. Database Migration
-* Database schema is managed through Drizzle ORM
-* Migrations should be applied before deployment:
-  ```bash
-  npm run db:push
-  ```
+### Replit Deployment (Recommended)
+YoutubeScribe is optimized for deployment on Replit:
 
-## 10. Backup Considerations
-* Regular database backups are essential
-* Use the provided backup tools:
-  ```bash
-  ./scripts/db-tools.sh backup
-  ```
-* Store backups securely outside the deployment environment
+1. Use the Replit deployment interface
+2. Set required secrets in the Replit Secrets panel
+3. The application will be available at `your-repl-name.replit.app`
 
-## 11. Monitoring
-* Application logs to stdout/stderr
-* Database monitoring should be configured separately
-* Consider implementing application performance monitoring
+### Alternative Deployment Options
 
-## 12. Security Considerations
-* Ensure PostgreSQL is properly secured
-* Use HTTPS for all traffic
-* Keep dependencies updated regularly
-* Review authentication implementation periodically
-## 4. Data Storage
-* **Type:** PostgreSQL database
-* **Details:** 
-  * Stores users, summaries, and screenshots
-  * Uses Drizzle ORM for database operations
-  * Schema defined in `shared/schema.ts`
-* **Persistence:** Database content must persist between deployments
-* **Database:** PostgreSQL >= 14
+#### Render
+* Deploy as a Web Service
+* Configure the PostgreSQL database
+* Set environment variables in the Render dashboard
 
-## 5. External Services & Networking
-* **Services:** 
-  * OpenAI API: For AI-powered summarization
-  * YouTube data (public APIs): For video metadata and transcripts
-* **Networking:** 
-  * Requires outbound HTTPS access
-  * Inbound access on the application port (default: 5000)
+#### Fly.io
+* Deploy using Dockerfile
+* Set up a PostgreSQL database instance
+* Configure secrets via fly secrets set
 
-## 6. Secrets Management
-* **Method:** Environment Variables
-* **Details:** The following environment variables are required:
-  * `DATABASE_URL` - PostgreSQL connection string
-  * `OPENAI_API_KEY` - API key for OpenAI services
-  * `SESSION_SECRET` - Secret for session encryption
+#### Manual VPS Deployment
+For self-hosting on a Virtual Private Server:
+
+1. Clone the repository
+2. Install Node.js 20.x
+3. Install and configure PostgreSQL
+4. Set environment variables
+5. Install dependencies with `npm install`
+6. Run database migrations with `npm run db:push`
+7. Start the server with `npm start`
+
+## 9. Database Considerations
+
+### Initialization
+* The database schema is managed by Drizzle ORM
+* Run `npm run db:push` to apply the schema to a new database
+* The first user who registers automatically becomes an administrator
+
+### Backup Strategy
+* Use the provided scripts in `/scripts/` for database backup and restore
+* Schedule regular backups for data safety
+* Store backups in a secure, separate location
+
+## 10. Monitoring and Maintenance
+* Implement application monitoring (optional)
+* Set up database health checks
+* Monitor OpenAI API usage and costs
+* Schedule regular database maintenance
+
+## 11. Security Notes
+* Ensure HTTPS is configured for production
+* Protect API keys and never expose them in client-side code
+* Consider implementing rate limiting for API endpoints
+* Keep the application and dependencies updated regularly
