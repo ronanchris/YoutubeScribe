@@ -17,6 +17,36 @@ For detailed information about using YoutubeScribe, please refer to the followin
 - [User Guide](docs/USER_GUIDE.md) - Comprehensive guide to all features and functionality
 - [Project Log](PROJECT_LOG.md) - Development history and technical notes
 
+## Database Maintenance
+
+YoutubeScribe includes tools for backing up and restoring the PostgreSQL database:
+
+### Backup Database
+
+To create a backup of the current database:
+
+```bash
+./scripts/db-tools.sh backup
+```
+
+This will create a timestamped SQL backup file in the `/backups` directory.
+
+### Restore Database
+
+To restore from a previously created backup:
+
+```bash
+./scripts/db-tools.sh restore
+```
+
+This will show available backups and guide you through the restore process.
+
+### Important Notes
+
+- Database backups are **not** included in Replit checkpoints
+- Development (.repl.co) and production (.replit.app) environments have separate databases
+- Always download important backups to your local computer by right-clicking the file in the `/backups` folder
+
 ## Tech Stack
 
 - **Frontend**: React with TypeScript, Tailwind CSS, shadcn UI components

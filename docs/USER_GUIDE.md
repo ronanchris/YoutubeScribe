@@ -1,266 +1,113 @@
 # YoutubeScribe User Guide
 
+Welcome to YoutubeScribe, an AI-powered YouTube video summarization tool. This guide will help you understand how to use all features effectively.
+
 ## Table of Contents
 
-1. [Introduction](#introduction)
-2. [Getting Started](#getting-started)
-   - [Account Creation](#account-creation)
-   - [Logging In](#logging-in)
-   - [User Interface Overview](#user-interface-overview)
-3. [Core Features](#core-features)
-   - [Creating Summaries](#creating-summaries)
-   - [Viewing Your Summaries](#viewing-your-summaries)
-   - [Summary Details](#summary-details)
-   - [Exporting to Markdown](#exporting-to-markdown)
-4. [User Management](#user-management)
-   - [User Roles](#user-roles)
-   - [Adding Users Directly](#adding-users-directly)
-   - [Inviting Users](#inviting-users)
-   - [Accepting Invitations](#accepting-invitations)
+1. [Getting Started](#getting-started)
+2. [Creating Summaries](#creating-summaries)
+3. [Viewing History](#viewing-history)
+4. [Managing Your Account](#managing-your-account)
 5. [Administrator Functions](#administrator-functions)
-   - [Admin Dashboard](#admin-dashboard)
-   - [Managing Users](#managing-users)
-   - [Promoting/Demoting Admins](#promotingdemoting-admins)
-   - [Viewing All Summaries](#viewing-all-summaries)
-6. [Technical Details](#technical-details)
-   - [AI Processing](#ai-processing)
-   - [Screenshot Detection](#screenshot-detection)
-   - [Data Security](#data-security)
+6. [Working with Summaries](#working-with-summaries)
 7. [Troubleshooting](#troubleshooting)
-   - [Common Issues](#common-issues)
-   - [Support Contact](#support-contact)
-
-## Introduction
-
-YoutubeScribe is a powerful web application designed to extract, summarize, and organize content from YouTube videos using advanced AI technology. The application automatically generates comprehensive summaries, extracts key points, and identifies important visual elements from videos, saving you time and enhancing your understanding of video content.
-
-### Key Capabilities
-
-- **AI-Powered Summarization**: Automatically generate concise summaries of video content
-- **Key Point Extraction**: Identify and list the most important points from videos
-- **Intelligent Screenshot Detection**: Capture and analyze diagrams and visual elements
-- **Collaborative Management**: Share and organize summaries with team members
-- **Markdown Export**: Export summaries for integration with note-taking systems
 
 ## Getting Started
 
-### Account Creation
-
-There are two ways to create an account in YoutubeScribe:
-
-1. **Direct Registration**: The first user who registers becomes an administrator
-2. **Invitation**: Receiving an invitation link from an existing administrator
-
-#### First-User Registration
-
-If you're the first user of a new YoutubeScribe instance:
-
-1. Navigate to the login page
-2. Click "Register" to create your account
-3. Enter your username and password
-4. Submit the form to create your account with administrator privileges
-
 ### Logging In
 
-1. Navigate to the application login page
-2. Enter your username and password 
-3. Click "Login" to access your account
+1. Access the application through your provided URL
+2. Enter your username and password
+3. If you received an invitation, use the link in your invitation email to set up your account
 
-### User Interface Overview
+### Navigation
 
-The YoutubeScribe interface consists of several key areas:
+The main navigation menu provides access to all key functions:
 
-- **Navigation Bar**: Access different sections of the application
-- **Summary Creation**: Input YouTube URLs to generate new summaries
-- **Summary History**: View your previously created summaries
-- **Admin Console**: (Administrators only) Manage users and system settings
+- **Home**: Create new video summaries
+- **History**: View your previously created summaries
+- **Admin**: (Administrators only) Manage users and view all summaries
 
-## Core Features
+## Creating Summaries
 
-### Creating Summaries
+1. From the Home page, paste a YouTube URL into the input field
+2. Click "Analyze Video" to begin the process
+3. The system will:
+   - Extract the video transcript
+   - Generate an AI-powered summary
+   - Capture key screenshots
+4. Once processing is complete, you'll be shown the summary results
 
-To create a new summary from a YouTube video:
+## Viewing History
 
-1. Navigate to the home page
-2. Enter a valid YouTube URL in the input field
-3. Click "Generate Summary"
-4. Wait while the system processes the video (this may take 1-2 minutes depending on video length)
-5. Review the generated summary, which includes:
-   - Video title and author information
-   - Key points extracted from the content
-   - Comprehensive summary text
-   - Structured outline of topics
-   - Important screenshots with timestamps
+The History page shows all summaries you've created:
 
-### Viewing Your Summaries
+- Each summary card displays the video title, date created, and a preview
+- Click on any summary to view the full details
+- Use the search and filter options to find specific summaries
 
-Access your summary history:
+## Managing Your Account
 
-1. Click on "History" in the navigation bar
-2. Browse through your previously created summaries
-3. Use the search function to find specific summaries
-4. Click on any summary card to view its details
-
-### Summary Details
-
-Each summary page contains:
-
-- **Video Information**: Title, author, duration, and thumbnail
-- **Key Points**: Bullet points of the most important information
-- **Detailed Summary**: Comprehensive overview of the video content
-- **Structured Outline**: Hierarchical breakdown of topics covered
-- **Screenshots Gallery**: Visual elements extracted from the video with timestamps
-- **Screenshot Descriptions**: AI-generated descriptions of visual content
-
-### Exporting to Markdown
-
-To export a summary to Markdown format:
-
-1. Open the summary details page
-2. Click the "Export to Markdown" button
-3. Choose where to save the exported file
-4. The Markdown file will include all summary text and references to screenshots
-
-## User Management
-
-### User Roles
-
-YoutubeScribe has two user roles with different permissions:
-
-#### Regular Users
-- Can create and view their own summaries
-- Cannot view summaries created by other users
-- Cannot access the admin dashboard or user management functions
-
-#### Administrators
-- Can create and view their own summaries
-- Can view summaries created by all users
-- Can manage users (add, invite, promote, demote, delete)
-- Can access the admin dashboard
-
-### Adding Users Directly
-
-Administrators can add users directly with predefined credentials:
-
-1. Navigate to the Admin Dashboard
-2. Click the "Add User" button
-3. Enter the new user's username
-4. Create a password for the user
-5. Select whether the user should be an administrator
-6. Click "Create User"
-
-The new user can immediately log in with these credentials. This method is useful when quickly setting up accounts for internal team members.
-
-### Inviting Users
-
-The invitation system provides a more secure way to add users:
-
-1. Navigate to the Admin Dashboard
-2. Click the "Invite User" button
-3. Enter the email address (which will become the username)
-4. Select whether the user should have administrator privileges
-5. Click "Send Invitation"
-6. Copy the generated invitation link
-7. Share the invitation link with the user (via email or other communication)
-
-Benefits of using invitations:
-- The admin doesn't need to create or share passwords
-- Users set their own passwords directly
-- Invitation links expire after 7 days for security
-- More secure for external collaborators
-
-### Accepting Invitations
-
-If you've received an invitation:
-
-1. Click the invitation link you received
-2. The system validates your invitation token
-3. If valid, you'll be prompted to create a new password
-4. After setting your password, you'll be automatically logged in
-5. Your account is now active with the permissions assigned by the administrator
+- Change your password through the profile settings
+- Manage your notification preferences
+- View your usage statistics
 
 ## Administrator Functions
 
-### Admin Dashboard
+Administrators have additional capabilities:
 
-The administrator dashboard provides tools for managing the application:
+### User Management
 
-1. Access by clicking "Admin" in the navigation bar (visible only to administrators)
-2. View a list of all registered users
-3. Access user management functions
-4. Monitor system usage statistics
+- View all registered users
+- Create invitation links for new users
+- Promote users to administrator status
+- Disable user accounts if needed
 
-### Managing Users
+### Content Oversight
 
-Administrators can manage users in several ways:
+- View summaries created by all users
+- Monitor system usage and performance
 
-- **Add User**: Create new accounts directly with predefined credentials
-- **Invite User**: Generate invitation links for secure self-registration
-- **Delete User**: Remove user accounts from the system
-- **Edit User**: Modify user information and permissions
-- **Regenerate Invitation**: Create a new invitation link for a pending user
+## Working with Summaries
 
-### Promoting/Demoting Admins
+### Customizing Summaries
 
-To change a user's administrator status:
+After a summary is generated, you can:
 
-1. Navigate to the Admin Dashboard
-2. Find the user in the users list
-3. Click "Promote to Admin" or "Demote from Admin"
-4. Confirm the action when prompted
+- Change the summary style using different prompt templates
+- Add custom screenshots at specific timestamps
+- Extract glossary terms from technical content
+- Export the summary in various formats
 
-### Viewing All Summaries
+### Adding Screenshots
 
-Administrators can access summaries created by all users:
-
-1. Navigate to the History page
-2. All summaries in the system will be visible (both your own and those created by others)
-3. User information is displayed on each summary card
-4. Filter summaries by user if needed
-
-## Technical Details
-
-### AI Processing
-
-YoutubeScribe uses advanced AI technology to process video content:
-
-- **Transcript Extraction**: Automatically retrieves video transcripts from YouTube
-- **OpenAI Integration**: Uses GPT-4o to analyze and summarize content
-- **Structured Data Generation**: Creates organized outlines and key points
-- **Intelligent Analysis**: Identifies the most relevant information
-
-### Screenshot Detection
-
-The screenshot extraction process:
-
-1. Analyzes video content at regular intervals
-2. Identifies frames containing important visual information
-3. Processes images to enhance text and diagrams
-4. Uses AI to generate descriptions of visual content
-5. Associates screenshots with specific timestamps in the video
-
-### Data Security
-
-YoutubeScribe prioritizes the security of your data:
-
-- **User Isolation**: Users can only access their own summaries
-- **Secure Authentication**: Password hashing and secure session management
-- **Expiring Invitations**: Invitation tokens that expire after 7 days
-- **Role-Based Access**: Permissions restricted based on user roles
+1. Open a summary from your history
+2. Scroll to the video frame scrubber
+3. Move to the desired timestamp
+4. Click "Capture Screenshot"
+5. Add an optional description
+6. The new screenshot will be added to your summary
 
 ## Troubleshooting
 
 ### Common Issues
 
-**Problem**: Invitation link doesn't work  
-**Solution**: Invitation links expire after 7 days. Ask an administrator to regenerate your invitation.
+**Video Cannot Be Processed**
+- Ensure the YouTube URL is valid and the video is publicly accessible
+- Some videos may have disabled transcripts or are in unsupported languages
 
-**Problem**: Summary generation takes too long  
-**Solution**: Processing time depends on video length. Longer videos may take several minutes to process.
+**Summary Generation Failed**
+- Try regenerating the summary
+- Very long videos may take more time to process
 
-**Problem**: Screenshots aren't displaying properly  
-**Solution**: Ensure you have a stable internet connection. Try refreshing the page.
+**Account Access Problems**
+- Use the password reset function
+- Contact your administrator if your account is locked
 
-### Support Contact
+## Data Management
 
-For additional support, please contact your system administrator.
+YoutubeScribe stores all your summaries in a database. For data consistency across different environments:
+
+- Regular backups are performed to prevent data loss
+- If you're using both development and production environments, be aware that they use separate databases
+- See the [Database Maintenance](../README.md#database-maintenance) section in the README for more details
