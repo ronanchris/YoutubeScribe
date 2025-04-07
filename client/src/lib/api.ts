@@ -155,3 +155,100 @@ export async function getAllSummaries() {
     throw error;
   }
 }
+
+/**
+ * Get summaries for non-admin users (current user's summaries only)
+ * @returns Array of summaries with screenshots for the current user
+ */
+export async function getNonAdminSummaries() {
+  try {
+    const response = await apiRequest('/api/user/summaries');
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user summaries: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching user summaries:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all summaries (alias for getAllSummaries for backward compatibility)
+ * @returns Array of summaries with screenshots
+ */
+export async function getSummaries() {
+  return getAllSummaries();
+}
+
+/**
+ * Create invitation for a new user
+ * @param data The invitation data including username
+ * @returns The created invitation with token
+ */
+export async function createInvitation(data: { username: string }) {
+  try {
+    const response = await apiRequest('/api/admin/invitations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to create invitation: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating invitation:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a new user based on invitation details
+ * @param data The user data including token, password
+ * @returns Success status
+ */
+export async function createUser(data: { token: string; password: string }) {
+  try {
+    const response = await apiRequest('/api/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to create user: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a user by ID (admin only)
+ * @param userId The ID of the user to delete
+ * @returns Success status
+ */
+export async function deleteUser(userId: number) {
+  try {
+    const response = await apiRequest(`/api/admin/users/${userId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete user: ${response.statusText}`);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  }
+}
