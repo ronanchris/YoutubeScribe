@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SummaryWithScreenshots } from "@shared/schema";
+import type { SummaryWithScreenshots } from "../types";
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCw } from "lucide-react";
 import axios from "axios";

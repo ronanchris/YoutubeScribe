@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, ThumbsUp } from "lucide-react";
-import { SummaryWithScreenshots } from "@shared/schema";
+import type { SummaryWithScreenshots } from "@/types";
 
 interface InteractiveTranscriptProps {
   transcript: string;

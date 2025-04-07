@@ -1,13 +1,14 @@
-import { Screenshot } from "@shared/schema";
+import type { Screenshot } from "../types";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Images } from "lucide-react";
 
 interface ScreenshotsGalleryProps {
   screenshots: Screenshot[];
+  showScrubber?: boolean;
 }
 
-export default function ScreenshotsGallery({ screenshots }: ScreenshotsGalleryProps) {
+export default function ScreenshotsGallery({ screenshots, showScrubber = false }: ScreenshotsGalleryProps) {
   const [selectedImage, setSelectedImage] = useState<Screenshot | null>(null);
 
   // Format timestamp as MM:SS
@@ -45,6 +46,42 @@ export default function ScreenshotsGallery({ screenshots }: ScreenshotsGalleryPr
         </svg>
         Key Visuals
       </h3>
+      
+      {/* Frame Scrubber UI */}
+      {showScrubber && (
+        <div className="mb-4 p-3 border border-slate-200 rounded-md bg-white">
+          <h4 className="text-sm font-medium text-slate-700 mb-2">Frame Scrubber</h4>
+          <p className="text-xs text-slate-500 mb-3">
+            Drag the slider to capture frames at specific timestamps in the video.
+          </p>
+          
+          <div className="flex flex-col space-y-3">
+            <div className="flex items-center space-x-2">
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                className="w-full"
+                // Add functionality for frame scrubbing later
+              />
+            </div>
+            
+            <div className="flex justify-between">
+              <span className="text-xs text-slate-500">00:00</span>
+              <span className="text-xs text-slate-500">Video Duration</span>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                className="bg-primary text-white px-3 py-1.5 rounded text-sm"
+                // Add functionality for capturing frames later
+              >
+                Capture Frame
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {screenshots.map((screenshot) => (

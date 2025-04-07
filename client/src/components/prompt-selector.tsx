@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SummaryWithScreenshots } from "@shared/schema";
+import type { SummaryWithScreenshots } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,7 +14,7 @@ import {
   Cpu,
   FileText
 } from "lucide-react";
-import { regenerateSummary, fetchTranscriptForSummary } from "@/lib/api";
+import { regenerateSummary, fetchTranscriptForSummary } from "../lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { TranscriptHighlighter } from "./interactive-transcript";
 

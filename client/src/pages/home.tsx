@@ -6,7 +6,7 @@ import SummaryResults from "@/components/summary-results";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createSummary, getSummary } from "@/lib/api";
-import { SummaryWithScreenshots } from "@shared/schema";
+import type { SummaryWithScreenshots } from "../types";
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SummaryWithScreenshots, Screenshot } from "@shared/schema";
+import type { SummaryWithScreenshots, Screenshot } from "../types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -9,18 +9,21 @@ import GlossaryTags from "./glossary-tags";
 import PromptSelector from "./prompt-selector";
 import TranscriptExporter from "./transcript-exporter";
 import TokenUsageDisplay from "./token-usage-display";
+import SummaryExporter from "./summary-exporter";
 import { useNavigate } from "@/hooks/use-navigate";
 
 interface SummaryResultsProps {
   summary: SummaryWithScreenshots;
+  initialShowScrubber?: boolean;
 }
 
-export default function SummaryResults({ summary: initialSummary }: SummaryResultsProps) {
+export default function SummaryResults({ summary: initialSummary, initialShowScrubber = false }: SummaryResultsProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [summary, setSummary] = useState<SummaryWithScreenshots>(initialSummary);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showScrubber, setShowScrubber] = useState(initialShowScrubber);
   const screenshots = summary.screenshots;
 
   // Format structured outline for rendering
@@ -92,7 +95,12 @@ export default function SummaryResults({ summary: initialSummary }: SummaryResul
         {/* Summary Content */}
         <div className="md:col-span-3 p-3 sm:p-4 md:border-r border-slate-200">
           <div className="space-y-4">
-            {/* Glossary Terms at the top */}
+            {/* Export Summary Button */}
+            <div className="mb-4">
+              <SummaryExporter summary={summary} />
+            </div>
+            
+            {/* Glossary Terms */}
             <div>
               <h3 className="text-md font-semibold text-slate-700 mb-2 flex items-center">
                 <svg
@@ -217,20 +225,17 @@ export default function SummaryResults({ summary: initialSummary }: SummaryResul
                 onSummaryUpdate={handleSummaryUpdate}
               />
               
-              {/* Transcript Download and Create New Summary Buttons */}
+              {/* Create New Summary and Transcript Download Buttons */}
               <div className="mt-4 flex flex-col space-y-3">
-                <div className="flex justify-between">
-                  <Button 
-                    variant="outline"
-                    className="flex-grow mr-2"
-                    onClick={() => navigate('/')}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create New Summary
-                  </Button>
-                  
-                  <TranscriptExporter summary={summary} onSummaryUpdate={handleSummaryUpdate} />
-                </div>
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate('/')}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Summary
+                </Button>
+                
+                <TranscriptExporter summary={summary} onSummaryUpdate={handleSummaryUpdate} />
               </div>
             </div>
           </div>
@@ -263,10 +268,17 @@ export default function SummaryResults({ summary: initialSummary }: SummaryResul
                 </svg>
                 Screenshots ({screenshots.length})
               </h3>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowScrubber(!showScrubber)}
+              >
+                {showScrubber ? "Hide Scrubber" : "Add Screenshots"}
+              </Button>
             </div>
             
             {/* Screenshots gallery */}
-            <ScreenshotsGallery screenshots={screenshots} />
+            <ScreenshotsGallery screenshots={screenshots} showScrubber={showScrubber} />
           </div>
         </div>
       </div>
