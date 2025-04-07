@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
+import rcLogoPath from "../assets/rc-logo.svg";
 
 // Extended schema with form validation rules
 const authFormSchema = insertUserSchema.extend({
@@ -75,6 +76,9 @@ export default function AuthPage() {
             onValueChange={(value) => setActiveTab(value as "login" | "register")}
           >
             <div className="mb-4 text-center">
+              <div className="flex justify-center mb-4">
+                <img src={rcLogoPath} alt="RC Logo" className="h-16 w-auto" />
+              </div>
               <h1 className="text-3xl font-extrabold tracking-tight mb-2">
                 YouTube Summary App
               </h1>
@@ -223,6 +227,10 @@ export default function AuthPage() {
       {/* Hero section */}
       <div className="flex-1 bg-gradient-to-br from-primary/20 to-primary/5 p-6 flex items-center justify-center hidden md:flex">
         <div className="max-w-lg">
+          <div className="flex items-center mb-6">
+            <img src={rcLogoPath} alt="RC Logo" className="h-12 w-auto mr-4" />
+            <h2 className="text-4xl font-bold">YTSummarizer</h2>
+          </div>
           <h2 className="text-4xl font-bold mb-4">
             Transform YouTube Videos Into Structured Knowledge
           </h2>
