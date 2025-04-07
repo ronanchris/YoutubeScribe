@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, ThumbsUp } from "lucide-react";
@@ -75,23 +75,66 @@ export default function InteractiveTranscript({
     };
   }, []);
   
-  // Format transcript for better readability
-  const formattedTranscript = transcript
-    .split(/(\s{4,}|\n+)/)
-    .filter(Boolean)
-    .map((section, index) => {
-      // Check if this section is just whitespace or newlines
-      if (/^[\s\n]+$/.test(section)) {
-        return <span key={index} className="block h-4" />;
+  // Format transcript for better readability by breaking into paragraphs
+  const formattedTranscript = useMemo(() => {
+    // First attempt to detect natural paragraphs based on pauses, periods, and newlines
+    const paragraphs: string[] = [];
+    let currentParagraph = "";
+    
+    // Split by spaces to process word by word
+    const words = transcript.split(/\s+/);
+    
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      currentParagraph += word + " ";
+      
+      // Check if we should end a paragraph:
+      // 1. If the word ends with a period, question mark, or exclamation mark
+      // 2. If we've accumulated enough words for a reasonable paragraph (15-20 words)
+      // 3. If there are explicit pauses or paragraph breaks in the transcript
+      
+      const isEndOfSentence = /[.!?]$/.test(word);
+      const isParagraphBreak = /^[\n\r]{2,}/.test(word) || /^\s{4,}/.test(word);
+      const hasReasonableLength = currentParagraph.split(/\s+/).length >= 18;
+      
+      if ((isEndOfSentence && hasReasonableLength) || isParagraphBreak || i === words.length - 1) {
+        paragraphs.push(currentParagraph.trim());
+        currentParagraph = "";
       }
-      return <span key={index}>{section}</span>;
-    });
+    }
+    
+    // If there's any remaining content, add it as a paragraph
+    if (currentParagraph.trim()) {
+      paragraphs.push(currentParagraph.trim());
+    }
+    
+    // If we couldn't determine paragraphs naturally, fallback to simple chunking
+    if (paragraphs.length <= 1) {
+      // Chunk the text into roughly equal parts
+      const totalWords = words.length;
+      const wordsPerParagraph = 20; // Target words per paragraph
+      
+      for (let i = 0; i < totalWords; i += wordsPerParagraph) {
+        const chunk = words.slice(i, i + wordsPerParagraph).join(" ");
+        if (chunk.trim()) {
+          paragraphs.push(chunk.trim());
+        }
+      }
+    }
+    
+    // Return the formatted paragraphs
+    return paragraphs.map((paragraph, index) => (
+      <p key={index} className="mb-3">
+        {paragraph}
+      </p>
+    ));
+  }, [transcript]);
   
   return (
     <div className="relative mt-2">
       <div 
         ref={transcriptRef}
-        className="text-sm text-slate-600 p-4 bg-white border border-slate-200 rounded-md max-h-[400px] overflow-y-auto"
+        className="text-sm text-slate-600 p-6 bg-white border border-slate-200 rounded-md max-h-[600px] md:max-h-[800px] overflow-y-auto"
         onMouseUp={handleTextSelection}
         onTouchEnd={handleTextSelection}
         style={{ position: "relative" }}
@@ -131,6 +174,7 @@ export function TranscriptHighlighter({
   onSummaryUpdate: (updatedSummary: SummaryWithScreenshots) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [viewMode, setViewMode] = useState<'compact' | 'full'>('compact');
   const { toast } = useToast();
   
   // Handle adding a highlighted section to key points
@@ -167,25 +211,43 @@ export function TranscriptHighlighter({
     }
   };
   
+  // Toggle between view modes (compact vs full)
+  const toggleViewMode = () => {
+    setViewMode(viewMode === 'compact' ? 'full' : 'compact');
+  };
+  
   return (
     <div className="border border-slate-200 rounded-md overflow-hidden">
       <div className="bg-slate-50 p-3 flex justify-between items-center">
         <h4 className="text-sm font-medium text-slate-700">Interactive Transcript</h4>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          {isExpanded ? "Hide Transcript" : "Show Transcript"}
-        </Button>
+        <div className="flex space-x-2">
+          {isExpanded && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleViewMode}
+            >
+              {viewMode === 'compact' ? 'Full View' : 'Compact View'}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? "Hide Transcript" : "Show Transcript"}
+          </Button>
+        </div>
       </div>
       
       {isExpanded && (
-        <div className="border-t border-slate-200">
-          <InteractiveTranscript
-            transcript={summary.transcript}
-            onHighlightAdd={handleAddHighlight}
-          />
+        <div className={`border-t border-slate-200 ${viewMode === 'full' ? 'w-full px-4' : ''}`}>
+          <div className={viewMode === 'full' ? 'max-w-4xl mx-auto' : ''}>
+            <InteractiveTranscript
+              transcript={summary.transcript}
+              onHighlightAdd={handleAddHighlight}
+            />
+          </div>
         </div>
       )}
     </div>
