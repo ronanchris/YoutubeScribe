@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect, useRef } from "react";
-import rcLogoPath from "../../assets/rc-logo.png";
+import rcLogoPath from "../../assets/rc-logo.svg";
 import {
   DropdownMenu,
   DropdownMenuContent,
