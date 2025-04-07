@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect, useRef } from "react";
 import RCLogoSVG from "../icons/rc-logo-svg";
-// Keep the PNG logo as a fallback
-import rcLogoPath from "../../assets/rc-logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,28 +58,11 @@ export default function Header() {
         <Link href="/"
           className="text-xl font-bold text-slate-800 flex items-center cursor-pointer"
         >
-          {/* SVG logo with PNG fallback */}
-          <div className="mr-2">
-            <RCLogoSVG 
-              size={32} 
-              color="#000000"
-            />
-            {/* Hidden fallback image that displays if SVG fails */}
-            <img 
-              src={rcLogoPath} 
-              alt="RC Logo" 
-              className="hidden" 
-              onError={(e) => {
-                // If SVG fails, show the PNG
-                e.currentTarget.classList.remove('hidden');
-                // Find and hide SVG sibling
-                const svg = e.currentTarget.previousElementSibling;
-                if (svg) {
-                  svg.classList.add('hidden');
-                }
-              }}
-            />
-          </div>
+          <RCLogoSVG 
+            size={32} 
+            className="mr-2" 
+            color="#000000"
+          />
           <span className={isMobile ? "sr-only" : ""}>YTSummarizer</span>
         </Link>
 

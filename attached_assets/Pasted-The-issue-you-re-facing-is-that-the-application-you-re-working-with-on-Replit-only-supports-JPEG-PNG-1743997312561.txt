@@ -1,0 +1,80 @@
+The issue you’re facing is that the application you’re working with on Replit only supports JPEG/PNG images for screenshots, likely because of how the server processes images using the Canvas API and base64 encoding.
+
+✅ Here’s how to add SVG support to your Replit application:
+
+⸻
+
+1. Allow SVG Files in Your Application
+
+Update your application to handle SVG files by modifying how images are stored and rendered.
+
+⸻
+
+2. Modify the Screenshot Schema
+
+If your backend expects base64 encoded images, it won’t work for SVGs unless you encode the SVG files as base64 strings or allow serving raw SVGs.
+
+Example of encoding an SVG to base64:
+
+src={`data:image/svg+xml;base64,${btoa(svgContent)}`}
+
+However, a simpler and better approach is to serve the SVG directly from your assets folder.
+
+⸻
+
+3. Add SVGs as Static Assets
+
+If you’re using React, create an assets folder and place your SVG file there:
+
+client/src/assets/your-logo.svg
+
+
+
+⸻
+
+4. Import and Render SVG in React
+
+React supports SVGs natively if you import them like a module:
+
+import Logo from './assets/your-logo.svg';
+
+const Header = () => (
+  <header>
+    <img src={Logo} alt="Your Logo" />
+  </header>
+);
+
+Alternatively, if you want to dynamically reference SVGs from your assets folder:
+
+const Header = () => (
+  <header>
+    <img src="/assets/your-logo.svg" alt="Your Logo" />
+  </header>
+);
+
+Ensure your build tool (e.g., Vite, Webpack) is configured to serve static assets from this folder.
+
+⸻
+
+5. Handling SVG Uploads (If Needed)
+
+If you want to allow users to upload SVGs and render them:
+	1.	Update your backend to accept SVG files.
+	2.	Ensure MIME type checking allows image/svg+xml.
+	3.	Save the uploaded SVG as a file (e.g., uploads/your-uploaded-file.svg) or convert it to base64 if you need to store it directly in the database.
+
+⸻
+
+6. Security Considerations
+
+SVGs can contain JavaScript, which could be a security risk. To sanitize SVGs:
+	•	Use libraries like sanitize-html or DOMPurify before rendering user-uploaded SVGs.
+
+⸻
+
+📌 Summary
+	•	✅ Add SVG files as static assets in your project and import them like normal files in React.
+	•	✅ Allow SVG uploads by updating your backend to accept and process image/svg+xml.
+	•	✅ Secure SVG rendering by sanitizing files before displaying them.
+
+Would you like me to walk you through updating your backend to accept SVG uploads and render them safely? 😊
