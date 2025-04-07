@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { URL } from 'url';
+import { getSubtitles } from 'youtube-captions-scraper';
 
 // Type definitions
 type Transcript = {
@@ -73,24 +74,63 @@ export function extractVideoId(url: string): string {
 }
 
 /**
- * Gets the video transcript using youtube-transcript-api or alternative methods
+ * Gets the video transcript using youtube-captions-scraper
  */
 export async function getVideoTranscript(url: string): Promise<string | null> {
   try {
     const videoId = extractVideoId(url);
     console.log(`Attempting to fetch transcript for video ID: ${videoId}`);
     
-    // For demo purposes, if we can't get a real transcript, we'll use sample text
-    // This allows us to demonstrate the application functionality
-    const videoInfo = await getVideoInfo(url);
-    
-    // Try to fetch from YouTube transcript API first
+    // Using youtube-captions-scraper package
     try {
-      // Using the youtube-transcript-api endpoint
+      console.log('Using youtube-captions-scraper to get transcript');
+      const captions = await getSubtitles({
+        videoID: videoId,
+        lang: 'en' // Try English captions first
+      });
+      
+      if (captions && captions.length > 0) {
+        console.log(`Successfully retrieved transcript with ${captions.length} segments`);
+        
+        // Concatenate all transcript segments into one string
+        const fullTranscript = captions
+          .map(caption => caption.text)
+          .join(' ');
+        
+        return fullTranscript;
+      } else {
+        console.log('No English captions available for this video, trying auto-generated captions');
+        
+        // Try auto-generated captions
+        const autoCaptions = await getSubtitles({
+          videoID: videoId,
+          lang: 'en', 
+          auto: true
+        });
+        
+        if (autoCaptions && autoCaptions.length > 0) {
+          console.log(`Successfully retrieved auto-generated transcript with ${autoCaptions.length} segments`);
+          
+          const fullTranscript = autoCaptions
+            .map(caption => caption.text)
+            .join(' ');
+          
+          return fullTranscript;
+        }
+        
+        console.log('No captions available for this video');
+      }
+    } catch (error: any) {
+      console.error('YouTube captions scraper failed:', error?.message || 'Unknown error');
+    }
+    
+    // Fallback method: Try to fetch using the public YouTube transcript API
+    try {
+      console.log('Trying fallback transcript API...');
       const response = await axios.get(`https://yt-transcript-api.vercel.app/transcript?id=${videoId}`);
       
       if (response.status === 200 && response.data && response.data.transcript) {
-        console.log('Successfully retrieved transcript from API');
+        console.log('Successfully retrieved transcript from public API');
         // Concatenate all transcript segments into one string
         const transcriptSegments: Transcript[] = response.data.transcript;
         const fullTranscript = transcriptSegments
@@ -100,23 +140,16 @@ export async function getVideoTranscript(url: string): Promise<string | null> {
         return fullTranscript;
       }
     } catch (error: any) {
-      console.log('YouTube transcript API failed:', error?.message || 'Unknown error');
-      // Continue to alternative method
+      console.log('Public YouTube transcript API failed:', error?.message || 'Unknown error');
     }
     
-    // Since this is a demo application, we'll use a sample transcript
-    // based on the video title so we can still demonstrate the summarization
-    console.log('Using sample transcript for demonstration');
+    // If all methods fail, return an error message explaining the situation
+    console.log('All transcript retrieval methods failed');
     
-    return `This is a sample transcript for the video titled "${videoInfo.videoTitle}" by ${videoInfo.videoAuthor}. 
-    The video appears to discuss various concepts related to technology, programming, or educational content.
-    This sample text allows us to demonstrate the summarization capabilities without requiring an actual transcript.
-    In the full application, we would integrate with reliable transcript APIs or services to extract the real content.
-    The video likely covers multiple topics, provides explanations, and offers insights about the subject matter.
-    Viewers might learn about key concepts, implementation details, best practices, and practical examples.
-    The presenter probably shares their expertise, experiences, and recommendations throughout the video.
-    There may be sections covering introduction, main topics, demonstrations, and conclusion.
-    This placeholder text enables our AI summarization to generate a structured outline and key points.`;
+    // Get basic video info to provide context
+    const videoInfo = await getVideoInfo(url);
+    
+    return `[No transcript available for "${videoInfo.videoTitle}" by ${videoInfo.videoAuthor}". This video may not have captions enabled, or they might be disabled by the content creator. Please try another video with available captions.]`;
     
   } catch (error: any) {
     console.error('Error in transcript processing:', error?.message || 'Unknown error');
