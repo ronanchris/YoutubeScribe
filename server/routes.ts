@@ -297,6 +297,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update a summary - requires authentication
+  app.patch("/api/summaries/:id", ensureAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid summary ID" });
+      }
+      
+      // First check if the summary exists and belongs to the user
+      const userId = req.user!.id;
+      const summary = await storage.getSummary(id);
+      
+      if (!summary) {
+        return res.status(404).json({ message: "Summary not found" });
+      }
+      
+      // Check if the summary belongs to the user (unless user is admin)
+      if (summary.userId !== userId && !req.user!.isAdmin) {
+        console.log(`Update access denied: User ${userId} attempted to update summary ${id} belonging to user ${summary.userId}`);
+        return res.status(403).json({ message: "You don't have permission to update this summary" });
+      }
+      
+      // Update the summary with the provided data
+      const updatedSummary = await storage.updateSummary(id, req.body);
+      
+      if (!updatedSummary) {
+        return res.status(500).json({ message: "Failed to update summary" });
+      }
+      
+      // Return the updated summary with screenshots
+      const finalSummary = await storage.getSummaryWithScreenshots(id);
+      res.json(finalSummary);
+    } catch (error) {
+      console.error("Error updating summary:", error);
+      res.status(500).json({ message: "Failed to update summary" });
+    }
+  });
+
   // Admin routes - require admin privileges
   
   // Get all summaries across all users - admin only

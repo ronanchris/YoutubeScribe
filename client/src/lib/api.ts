@@ -420,3 +420,28 @@ export async function addCustomScreenshot(
     throw error;
   }
 }
+
+/**
+ * Update a summary with new data (for key points or other fields)
+ * @param summaryId The ID of the summary to update
+ * @param summaryData The partial summary data to update 
+ * @returns The updated summary
+ */
+export async function updateSummary(summaryId: number, summaryData: Partial<any>) {
+  try {
+    const response = await apiRequest(`/api/summaries/${summaryId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(summaryData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to update summary: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating summary:', error);
+    throw error;
+  }
+}

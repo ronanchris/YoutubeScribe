@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, ThumbsUp } from "lucide-react";
 import type { SummaryWithScreenshots } from "@/types";
+import { updateSummary } from "@/lib/api";
 
 interface InteractiveTranscriptProps {
   transcript: string;
@@ -133,22 +134,37 @@ export function TranscriptHighlighter({
   const { toast } = useToast();
   
   // Handle adding a highlighted section to key points
-  const handleAddHighlight = (highlightedText: string) => {
+  const handleAddHighlight = async (highlightedText: string) => {
     const updatedKeyPoints = [...summary.keyPoints, highlightedText];
     
-    // Create updated summary object
-    const updatedSummary = {
-      ...summary,
-      keyPoints: updatedKeyPoints
-    };
-    
-    // Update the parent component
-    onSummaryUpdate(updatedSummary);
-    
-    toast({
-      title: "Key Point Added",
-      description: "Your highlighted selection has been added to the key points.",
-    });
+    try {
+      // Create updated summary object
+      const updatedSummary = {
+        ...summary,
+        keyPoints: updatedKeyPoints
+      };
+      
+      // First update the UI (optimistic update)
+      onSummaryUpdate(updatedSummary);
+      
+      // Then persist to the database
+      const savedSummary = await updateSummary(summary.id, { keyPoints: updatedKeyPoints });
+      
+      // Update with the response from the server (which should include any other changes)
+      onSummaryUpdate(savedSummary);
+      
+      toast({
+        title: "Key Point Added",
+        description: "Your highlighted selection has been added to the key points and saved.",
+      });
+    } catch (error) {
+      console.error("Error saving highlighted key point:", error);
+      toast({
+        title: "Error Saving Key Point",
+        description: "There was a problem saving your highlighted text. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   return (
