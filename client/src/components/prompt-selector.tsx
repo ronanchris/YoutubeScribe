@@ -11,10 +11,12 @@ import {
   MessageSquare, 
   Library,
   Loader2,
-  Cpu
+  Cpu,
+  FileText
 } from "lucide-react";
 import { regenerateSummary, fetchTranscriptForSummary } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { TranscriptHighlighter } from "./interactive-transcript";
 
 interface PromptSelectorProps {
   summary: SummaryWithScreenshots;
@@ -31,7 +33,7 @@ const promptTypes = [
 ] as const;
 
 export default function PromptSelector({ summary, onSummaryUpdate }: PromptSelectorProps) {
-  const [activeTab, setActiveTab] = useState<"transcript" | "regenerate">("transcript");
+  const [activeTab, setActiveTab] = useState<"transcript" | "regenerate" | "interactive">("transcript");
   const [selectedPrompt, setSelectedPrompt] = useState<"standard" | "detailed" | "concise" | "business" | "academic" | "technical_ai">("standard");
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isFetchingTranscript, setIsFetchingTranscript] = useState(false);
@@ -103,11 +105,12 @@ export default function PromptSelector({ summary, onSummaryUpdate }: PromptSelec
         <h3 className="text-md font-semibold text-slate-700">Advanced Options</h3>
       </div>
       
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "transcript" | "regenerate")}>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "transcript" | "regenerate" | "interactive")}>
         <div className="px-4 pt-2">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="transcript">View Transcript</TabsTrigger>
-            <TabsTrigger value="regenerate">Regenerate Summary</TabsTrigger>
+            <TabsTrigger value="interactive">Interactive</TabsTrigger>
+            <TabsTrigger value="regenerate">Regenerate</TabsTrigger>
           </TabsList>
         </div>
         
@@ -129,6 +132,50 @@ export default function PromptSelector({ summary, onSummaryUpdate }: PromptSelec
           </div>
         </TabsContent>
         
+        {/* Interactive Transcript Tab */}
+        <TabsContent value="interactive" className="p-4">
+          <div className="mb-2">
+            <p className="text-sm text-slate-500">
+              Highlight parts of the transcript to add them as key points. This helps customize the summary with specific sections you find important.
+            </p>
+          </div>
+          
+          {summary.transcript ? (
+            <TranscriptHighlighter
+              summary={summary}
+              onSummaryUpdate={onSummaryUpdate || (() => {})}
+            />
+          ) : (
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">
+              <p className="text-sm text-amber-700">
+                <strong>Note:</strong> Interactive highlighting requires the full transcript.
+                Please fetch the transcript first to enable this feature.
+              </p>
+              <div className="mt-3">
+                <Button 
+                  variant="outline" 
+                  className="bg-white border-amber-300 hover:bg-amber-100 text-amber-700 flex items-center"
+                  onClick={handleFetchTranscript}
+                  disabled={isFetchingTranscript}
+                >
+                  {isFetchingTranscript ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Fetching transcript...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Fetch Transcript
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </TabsContent>
+        
+        {/* Regenerate Tab */}
         <TabsContent value="regenerate" className="p-4">
           <div className="mb-4">
             <p className="text-sm text-slate-500 mb-2">

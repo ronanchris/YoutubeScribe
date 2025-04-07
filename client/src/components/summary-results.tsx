@@ -90,6 +90,29 @@ export default function SummaryResults({ summary: initialSummary }: SummaryResul
         {/* Summary Content */}
         <div className="md:col-span-3 p-3 sm:p-4 md:border-r border-slate-200">
           <div className="space-y-4">
+            {/* Glossary Terms at the top */}
+            <div>
+              <h3 className="text-md font-semibold text-slate-700 mb-2 flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-5 w-5 text-primary mr-1"
+                >
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                </svg>
+                Glossary Terms
+              </h3>
+              <div className="text-sm text-slate-600 mb-2">
+                <GlossaryTags summaryContent={summary.summary} />
+              </div>
+            </div>
+
+            {/* Key Points */}
             <div>
               <h3 className="text-md font-semibold text-slate-700 mb-2 flex items-center">
                 <svg
@@ -115,6 +138,7 @@ export default function SummaryResults({ summary: initialSummary }: SummaryResul
               </ul>
             </div>
 
+            {/* Summary */}
             <div>
               <h3 className="text-md font-semibold text-slate-700 mb-2 flex items-center">
                 <svg
@@ -132,15 +156,13 @@ export default function SummaryResults({ summary: initialSummary }: SummaryResul
                 Summary
               </h3>
               <div className="text-sm text-slate-600 space-y-2">
-                {/* Glossary tags for the summary */}
-                <GlossaryTags summaryContent={summary.summary} />
-                
                 {summary.summary.split('\n\n').map((paragraph, index) => (
                   <p key={index}>{paragraph}</p>
                 ))}
               </div>
             </div>
 
+            {/* Structured Outline */}
             <div>
               <h3 className="text-md font-semibold text-slate-700 mb-2 flex items-center">
                 <svg
@@ -178,21 +200,26 @@ export default function SummaryResults({ summary: initialSummary }: SummaryResul
               </div>
             </div>
             
-            {/* Prompt Selector and Transcript Display - Always show options */}
-            <PromptSelector 
-              summary={summary} 
-              onSummaryUpdate={handleSummaryUpdate}
-            />
-            
-            {/* Create New Summary Button */}
-            <div className="mt-6">
-              <Button 
-                className="w-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center"
-                onClick={() => navigate('/')}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Summary
-              </Button>
+            {/* Advanced Options Section */}
+            <div className="border border-slate-200 rounded-md p-4 bg-slate-50">
+              <h3 className="text-md font-semibold text-slate-700 mb-3">Advanced Options</h3>
+              
+              {/* Prompt Selector and Transcript Display */}
+              <PromptSelector 
+                summary={summary} 
+                onSummaryUpdate={handleSummaryUpdate}
+              />
+              
+              {/* Create New Summary Button */}
+              <div className="mt-4">
+                <Button 
+                  className="w-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center"
+                  onClick={() => navigate('/')}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Summary
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -242,6 +269,16 @@ function generateMarkdown(summary: SummaryWithScreenshots): string {
   let markdown = `# ${summary.videoTitle}\n`;
   markdown += `By ${summary.videoAuthor}\n\n`;
   
+  // Extract glossary terms from the summary
+  const glossaryTerms = extractGlossaryTerms(summary.summary);
+  if (glossaryTerms.length > 0) {
+    markdown += `## Glossary Terms\n`;
+    glossaryTerms.forEach(term => {
+      markdown += `- ${term}\n`;
+    });
+    markdown += '\n';
+  }
+  
   markdown += `## Key Points\n`;
   summary.keyPoints.forEach(point => {
     markdown += `- ${point}\n`;
@@ -268,6 +305,26 @@ function generateMarkdown(summary: SummaryWithScreenshots): string {
   markdown += `\nURL: ${summary.videoUrl}\n`;
   
   return markdown;
+}
+
+// Helper function to extract glossary terms from summary content
+function extractGlossaryTerms(summaryContent: string): string[] {
+  // This is a simplified implementation. In a real-world scenario,
+  // you might want to use a more sophisticated NLP approach or a pre-defined dictionary.
+  const terms = summaryContent.match(/\b[A-Z][a-zA-Z0-9]*(\.?[A-Z][a-zA-Z0-9]*)*\b/g) || [];
+  
+  // Filter out common words, duplicates, etc.
+  const uniqueTerms: string[] = [];
+  terms.forEach(term => {
+    if (!uniqueTerms.includes(term)) {
+      uniqueTerms.push(term);
+    }
+  });
+  
+  return uniqueTerms
+    .filter(term => term.length > 2)
+    .filter(term => !['The', 'This', 'That', 'These', 'Those', 'There', 'Their', 'They'].includes(term))
+    .slice(0, 10); // Limit to 10 terms for readability
 }
 
 // Helper function to format timestamp
