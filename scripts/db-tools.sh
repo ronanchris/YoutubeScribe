@@ -19,9 +19,9 @@ function show_help {
 
 # Run the appropriate script based on command
 if [ "$1" == "backup" ]; then
-  node scripts/backup-db.js
+  node backup-db.js
 elif [ "$1" == "restore" ]; then
-  node scripts/restore-db.js
+  node restore-db.js
 elif [ "$1" == "help" ] || [ -z "$1" ]; then
   show_help
 else

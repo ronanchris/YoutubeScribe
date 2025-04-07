@@ -22,6 +22,20 @@ git clone https://github.com/ronanchris/YoutubeScribe.git
 
 ### Pushing Changes
 
+#### Option 1: Using the helper script (recommended)
+
+We've created a helper script to simplify pushing to GitHub with token authentication:
+
+```bash
+# Push with commit message
+./scripts/git-push.sh "Your descriptive commit message"
+
+# Or run without arguments to be prompted for a message
+./scripts/git-push.sh
+```
+
+#### Option 2: Manual Git commands
+
 ```bash
 # Add changes
 git add .
