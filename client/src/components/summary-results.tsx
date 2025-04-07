@@ -7,6 +7,7 @@ import { Copy, Bookmark, CheckCheck, Plus } from "lucide-react";
 import ScreenshotsGallery from "./screenshots-gallery";
 import GlossaryTags from "./glossary-tags";
 import PromptSelector from "./prompt-selector";
+import TranscriptExporter from "./transcript-exporter";
 import { useNavigate } from "@/hooks/use-navigate";
 
 interface SummaryResultsProps {
@@ -210,15 +211,20 @@ export default function SummaryResults({ summary: initialSummary }: SummaryResul
                 onSummaryUpdate={handleSummaryUpdate}
               />
               
-              {/* Create New Summary Button */}
-              <div className="mt-4">
-                <Button 
-                  className="w-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center"
-                  onClick={() => navigate('/')}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create New Summary
-                </Button>
+              {/* Transcript Download and Create New Summary Buttons */}
+              <div className="mt-4 flex flex-col space-y-3">
+                <div className="flex justify-between">
+                  <Button 
+                    variant="outline"
+                    className="flex-grow mr-2"
+                    onClick={() => navigate('/')}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Summary
+                  </Button>
+                  
+                  <TranscriptExporter summary={summary} />
+                </div>
               </div>
             </div>
           </div>
