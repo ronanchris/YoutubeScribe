@@ -252,3 +252,135 @@ export async function deleteUser(userId: number) {
     throw error;
   }
 }
+
+/**
+ * Demote a user from admin role (admin only)
+ * @param userId The ID of the user to demote
+ * @returns The updated user
+ */
+export async function demoteFromAdmin(userId: number) {
+  try {
+    const response = await apiRequest(`/api/admin/users/${userId}/demote`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to demote user: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error demoting user:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all users (admin only)
+ * @returns Array of users
+ */
+export async function getUsers() {
+  try {
+    const response = await apiRequest('/api/admin/users');
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch users: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    throw error;
+  }
+}
+
+/**
+ * Promote a user to admin role (admin only)
+ * @param userId The ID of the user to promote
+ * @returns The updated user
+ */
+export async function promoteToAdmin(userId: number) {
+  try {
+    const response = await apiRequest(`/api/admin/users/${userId}/promote`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to promote user: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error promoting user:', error);
+    throw error;
+  }
+}
+
+/**
+ * Regenerate invitation link for a user (admin only)
+ * @param userId The ID of the user to regenerate invitation link for
+ * @returns The updated invitation with new token
+ */
+export async function regenerateInvitationLink(userId: number) {
+  try {
+    const response = await apiRequest(`/api/admin/users/${userId}/regenerate-invitation`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to regenerate invitation link: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error regenerating invitation link:', error);
+    throw error;
+  }
+}
+
+/**
+ * Validate invitation token
+ * @param token The invitation token to validate
+ * @returns Response with validation status and username if valid
+ */
+export async function validateInvitationToken(token: string) {
+  try {
+    const response = await apiRequest(`/api/validate-invitation?token=${encodeURIComponent(token)}`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to validate invitation token: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error validating invitation token:', error);
+    throw error;
+  }
+}
+
+/**
+ * Accept invitation and set password for a new user
+ * @param token The invitation token
+ * @param password The new password for the user
+ * @returns Response with the created user details
+ */
+export async function acceptInvitation(token: string, password: string) {
+  try {
+    const response = await apiRequest('/api/accept-invitation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token, newPassword: password }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to accept invitation: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error accepting invitation:', error);
+    throw error;
+  }
+}
