@@ -23,6 +23,7 @@ This index provides a comprehensive guide to all documentation files for the You
 ## Deployment & Operations
 
 - [**DEPLOYMENT_NOTES.md**](./DEPLOYMENT_NOTES.md) - Comprehensive guide for deploying the application to various environments
+- [**GITHUB_INTEGRATION.md**](./GITHUB_INTEGRATION.md) - Guide for working with the GitHub repository
 
 ## Development Guidelines
 
@@ -68,6 +69,7 @@ This index provides a comprehensive guide to all documentation files for the You
 | Understand the codebase structure | [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) |
 | Handle database maintenance or backups | [DATABASE_GUIDE.md](./DATABASE_GUIDE.md) |
 | Deploy the application | [DEPLOYMENT_NOTES.md](./DEPLOYMENT_NOTES.md) |
+| Work with the GitHub repository | [GITHUB_INTEGRATION.md](./GITHUB_INTEGRATION.md) |
 | Understand user permissions | [ROLES_AND_PERMISSIONS.md](./ROLES_AND_PERMISSIONS.md) |
 | Check project dependencies | [DEPENDENCIES.md](./DEPENDENCIES.md) |
 | Develop with Replit AI | [REPLIT_AGENT_RULES.md](./REPLIT_AGENT_RULES.md) |
