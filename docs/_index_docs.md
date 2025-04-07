@@ -11,7 +11,9 @@ This index provides a comprehensive guide to all documentation files for the You
 
 - [**PROJECT_STRUCTURE.md**](./PROJECT_STRUCTURE.md) - Overview of the project's file and directory organization
 - [**DEPENDENCIES.md**](./DEPENDENCIES.md) - Detailed list of project dependencies and their purposes
+- [**API_REFERENCE.md**](./API_REFERENCE.md) - Comprehensive reference for all API endpoints and client-side functions
 
+- [**API_REFERENCE.md**](./API_REFERENCE.md) - Comprehensive reference for all API endpoints and client-side functions
 ## Database & Data Management
 
 - [**DATABASE_GUIDE.md**](./DATABASE_GUIDE.md) - Complete guide to database setup, maintenance, and backup procedures
@@ -79,6 +81,7 @@ This index provides a comprehensive guide to all documentation files for the You
 | Manage users or system settings | [ADMIN_GUIDE.md](./ADMIN_GUIDE.md) |
 | Understand the codebase structure | [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) |
 | Handle database maintenance or backups | [DATABASE_GUIDE.md](./DATABASE_GUIDE.md) |
+| Access API documentation and references | [API_REFERENCE.md](./API_REFERENCE.md) |
 | Deploy the application | [DEPLOYMENT_NOTES.md](./DEPLOYMENT_NOTES.md) |
 | Understand prompt templates | [PROMPTS_GUIDE.md](./PROMPTS_GUIDE.md) |
 | Compare hosting options | [HOSTING_OPTIONS.md](./HOSTING_OPTIONS.md) |
