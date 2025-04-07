@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { getSummaries, getAllSummaries, getNonAdminSummaries } from "@/lib/api";
@@ -18,24 +18,40 @@ export default function History() {
   const isAdmin = user?.isAdmin || false;
   
   // Use different API calls based on user role
-  const { data: standardSummaries, isLoading: isLoadingStandard, error: standardError } = useQuery({
+  const { data: standardSummaries, isLoading: isLoadingStandard, error: standardError, refetch: refetchStandard } = useQuery({
     queryKey: ['/api/summaries'],
     queryFn: getSummaries,
+    // Force a refresh when component mounts to ensure latest data
+    refetchOnMount: true
   });
   
   // Admin users also get all summaries for the "All Users" tab
-  const { data: adminSummaries, isLoading: isLoadingAdmin, error: adminError } = useQuery({
+  const { data: adminSummaries, isLoading: isLoadingAdmin, error: adminError, refetch: refetchAdmin } = useQuery({
     queryKey: ['/api/admin/summaries'],
     queryFn: getAllSummaries,
     enabled: isAdmin, // Only run this query for admin users
+    // Force a refresh when component mounts to ensure latest data
+    refetchOnMount: true
   });
   
   // Get non-admin user summaries for the "Other Users" tab
-  const { data: nonAdminSummaries, isLoading: isLoadingNonAdmin, error: nonAdminError } = useQuery({
+  const { data: nonAdminSummaries, isLoading: isLoadingNonAdmin, error: nonAdminError, refetch: refetchNonAdmin } = useQuery({
     queryKey: ['/api/admin/summaries/non-admin'],
     queryFn: getNonAdminSummaries,
     enabled: isAdmin, // Only run this query for admin users
+    // Force a refresh when component mounts to ensure latest data
+    refetchOnMount: true
   });
+  
+  // Effect to refetch data when component mounts
+  useEffect(() => {
+    // Force a refresh of the appropriate data
+    refetchStandard();
+    if (isAdmin) {
+      refetchAdmin();
+      refetchNonAdmin();
+    }
+  }, [refetchStandard, refetchAdmin, refetchNonAdmin, isAdmin]);
   
   // Determine which summaries to display based on active tab and user role
   let summaries = standardSummaries;
