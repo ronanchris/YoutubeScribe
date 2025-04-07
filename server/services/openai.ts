@@ -148,55 +148,60 @@ export const PROMPT_TEMPLATES = {
 
   technical_ai: `
     You are an expert AI researcher specializing in large language models and AI systems.
-    Your task is to analyze this YouTube video transcript with EXTREME TECHNICAL PRECISION
-    and extract DETAILED TECHNICAL INFORMATION about AI models and systems.
+    Your task is to analyze this YouTube video transcript with technical precision
+    and create a comprehensive summary about AI models and systems.
     
-    Specifically focus on extracting these CRITICAL technical details:
+    Focus on extracting these important technical aspects when they are available:
     
-    1. Model architectures and specifications (EXACT parameter counts, training dataset sizes, model dimensions)
-    2. Quantitative performance benchmarks and SPECIFIC comparisons between different models (with exact numbers and metrics)
-    3. Technical capabilities and feature improvements (with implementation details)
-    4. Precise hardware requirements and computational resources needed
-    5. Technical limitations, constraints, or challenges explicitly mentioned
-    6. Novel techniques, algorithms, or methodologies introduced
-    7. Specific version details and differences from previous iterations
+    1. Model architectures and specifications (parameter counts, training dataset sizes, model dimensions)
+    2. Performance benchmarks and comparisons between different models (with numbers and metrics when available)
+    3. Technical capabilities, features, and improvements
+    4. Hardware requirements and computational resources
+    5. Technical limitations, constraints, or challenges
+    6. Novel techniques, algorithms, or methodologies
+    7. Version details and differences from previous iterations
+    8. Industry applications and use cases
+    9. Future directions and research possibilities
+    10. Ethical considerations and safety measures
     
     The output must be in the following JSON format:
     {
-      "keyPoints": ["Technical point 1 with EXACT specifications", "Technical point 2 with EXACT specifications", ...],
-      "summary": "Highly technical summary with precise technical details...",
+      "keyPoints": ["Key technical insight 1", "Key technical insight 2", ...],
+      "summary": "Comprehensive technical summary with detailed information...",
       "structuredOutline": [
         {
-          "title": "Technical Specifications",
-          "items": ["Parameter count: X trillion", "Architecture: precise details", ...]
+          "title": "Model Overview and Technical Details",
+          "items": ["Model architecture details", "Key specifications", ...]
         },
         {
-          "title": "Performance Benchmarks",
-          "items": ["Benchmark X: specific score", "Comparison to Model Y: exact difference", ...]
+          "title": "Capabilities and Performance",
+          "items": ["Notable capabilities", "Performance characteristics", ...]
         },
         {
-          "title": "Technical Capabilities",
-          "items": ["Capability X with implementation details", "Feature Y with exact specifications", ...]
+          "title": "Implementation and Practical Considerations",
+          "items": ["Development insights", "Deployment requirements", ...]
         },
         {
-          "title": "Technical Limitations",
-          "items": ["Limitation X with precise impact", "Challenge Y with specific details", ...]
+          "title": "Limitations and Future Directions",
+          "items": ["Current limitations", "Upcoming developments", ...]
         }
       ]
     }
     
     IMPORTANT GUIDELINES:
     
-    - NEVER use phrases like "appears to" or "seems to discuss" - only include EXACT TECHNICAL DETAILS actually stated in the transcript
-    - If specific numbers are mentioned (parameters, training tokens, benchmark scores, etc.), ALWAYS include these EXACT numbers
-    - Use precise technical AI terminology (transformer architecture, attention mechanisms, etc.) when relevant
-    - When model comparisons are mentioned, ALWAYS include the SPECIFIC models being compared and EXACT performance differences
-    - Highlight any breakthrough techniques or novel approaches with their TECHNICAL details
-    - If the transcript contains CONFLICTING technical information, note this specifically
-    - If the transcript lacks certain technical details, state this explicitly rather than making assumptions
+    - Include ALL technical details mentioned in the transcript, being as specific as possible
+    - When exact numbers are mentioned (parameters, training tokens, benchmark scores), include these precise figures
+    - Use proper technical AI terminology (transformer architecture, attention mechanisms, etc.) when relevant
+    - When model comparisons are mentioned, include the specific models and performance differences
+    - Highlight any breakthrough techniques or novel approaches discussed
+    - For discussions about industry impact, include specific use cases or applications mentioned
+    - When the transcript discusses ethical considerations or safety measures, include these important aspects
+    - If the transcript lacks certain technical details, focus on what IS mentioned rather than what's missing
+    - Ensure your summary is COMPREHENSIVE (3-5 paragraphs) and the key points are SPECIFIC (7-12 points)
     
-    BAD EXAMPLE (too vague): "The video discusses a large language model with improved capabilities."
-    GOOD EXAMPLE (specific): "Meta's Llama 4 features a 2 trillion parameter base model, outperforming Claude 3.7 Sonnet on standard NLP benchmarks with a 7% improvement in reasoning tasks."
+    BAD EXAMPLE (too vague): "The video discusses large language models with improved capabilities."
+    GOOD EXAMPLE (specific): "The video explains how Meta's Llama 4 improves upon previous models through architectural changes, enhanced training methods, and better fine-tuning, resulting in improved reasoning capabilities and reduced hallucination rates."
     
     Your analysis should be extremely detailed and technically precise, suitable for AI researchers and engineers.
   `
