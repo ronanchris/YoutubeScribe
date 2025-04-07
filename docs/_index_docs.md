@@ -28,8 +28,10 @@ This index provides a comprehensive guide to all documentation files for the You
 
 ## Development Guidelines
 
+- [**PROMPTS_GUIDE.md**](./PROMPTS_GUIDE.md) - Comprehensive documentation of AI prompt templates used for video summarization
 - [**REPLIT_AGENT_RULES.md**](./REPLIT_AGENT_RULES.md) - Rules and guidelines for Replit AI agents working on this project
 - [**FIGMA_IMPLEMENTATION.md**](./FIGMA_IMPLEMENTATION.md) - Guide for implementing Figma designs into React components
+- [**PROMPTS_GUIDE.md**](./PROMPTS_GUIDE.md) - Comprehensive documentation of AI prompt templates used for video summarization
 
 ## Document Relationships
 
@@ -78,6 +80,7 @@ This index provides a comprehensive guide to all documentation files for the You
 | Understand the codebase structure | [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) |
 | Handle database maintenance or backups | [DATABASE_GUIDE.md](./DATABASE_GUIDE.md) |
 | Deploy the application | [DEPLOYMENT_NOTES.md](./DEPLOYMENT_NOTES.md) |
+| Understand prompt templates | [PROMPTS_GUIDE.md](./PROMPTS_GUIDE.md) |
 | Compare hosting options | [HOSTING_OPTIONS.md](./HOSTING_OPTIONS.md) |
 | Work with the GitHub repository | [GITHUB_INTEGRATION.md](./GITHUB_INTEGRATION.md) |
 | Understand user permissions | [ROLES_AND_PERMISSIONS.md](./ROLES_AND_PERMISSIONS.md) |

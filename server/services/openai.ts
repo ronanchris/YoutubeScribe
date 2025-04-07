@@ -148,21 +148,22 @@ export const PROMPT_TEMPLATES = {
 
   technical_ai: `
     You are an expert AI researcher specializing in large language models and AI systems.
-    Your task is to analyze this YouTube video transcript with technical precision
-    and create a comprehensive summary about AI models and systems.
+    Your task is to analyze this YouTube video transcript thoroughly and create a comprehensive
+    technical summary about AI models, systems, and related technologies.
     
-    Focus on extracting these important technical aspects when they are available:
+    CRITICAL INSTRUCTION: Analyze what's ACTUALLY in the transcript, not what you think should be there.
+    Even if the video is by a major AI company, only include details that are EXPLICITLY STATED.
     
-    1. Model architectures and specifications (parameter counts, training dataset sizes, model dimensions)
-    2. Performance benchmarks and comparisons between different models (with numbers and metrics when available)
-    3. Technical capabilities, features, and improvements
-    4. Hardware requirements and computational resources
-    5. Technical limitations, constraints, or challenges
-    6. Novel techniques, algorithms, or methodologies
-    7. Version details and differences from previous iterations
-    8. Industry applications and use cases
-    9. Future directions and research possibilities
-    10. Ethical considerations and safety measures
+    Focus on extracting ALL technical aspects mentioned, prioritizing in this order:
+    
+    1. MAJOR ANNOUNCEMENTS - New models, services, or significant updates (critical to capture these)
+    2. Technical specifications - Model sizes, parameters, training data details (when explicitly given)
+    3. Performance capabilities - Benchmarks, comparisons, evaluation results
+    4. Technical improvements - How new models/systems improve over previous versions
+    5. Implementation details - Architecture, training methods, algorithms, techniques
+    6. Practical applications - Use cases, industry applications, API features
+    7. Limitations and challenges - Current constraints, ethical considerations, safety measures
+    8. Future directions - Roadmaps, upcoming features, research priorities
     
     The output must be in the following JSON format:
     {
@@ -170,38 +171,40 @@ export const PROMPT_TEMPLATES = {
       "summary": "Comprehensive technical summary with detailed information...",
       "structuredOutline": [
         {
-          "title": "Model Overview and Technical Details",
-          "items": ["Model architecture details", "Key specifications", ...]
+          "title": "Core Announcements and Highlights",
+          "items": ["Major model launch details", "Key technical breakthroughs", ...]
         },
         {
-          "title": "Capabilities and Performance",
-          "items": ["Notable capabilities", "Performance characteristics", ...]
+          "title": "Technical Specifications and Performance",
+          "items": ["Architecture details", "Benchmark results", ...]
         },
         {
-          "title": "Implementation and Practical Considerations",
-          "items": ["Development insights", "Deployment requirements", ...]
+          "title": "Features and Capabilities",
+          "items": ["Specific abilities", "Improvements over previous versions", ...]
         },
         {
-          "title": "Limitations and Future Directions",
-          "items": ["Current limitations", "Upcoming developments", ...]
+          "title": "Applications and Implementation",
+          "items": ["Industry use cases", "Integration methods", ...]
         }
       ]
     }
     
-    IMPORTANT GUIDELINES:
+    CRITICAL GUIDELINES:
     
-    - Include ALL technical details mentioned in the transcript, being as specific as possible
-    - When exact numbers are mentioned (parameters, training tokens, benchmark scores), include these precise figures
-    - Use proper technical AI terminology (transformer architecture, attention mechanisms, etc.) when relevant
-    - When model comparisons are mentioned, include the specific models and performance differences
-    - Highlight any breakthrough techniques or novel approaches discussed
-    - For discussions about industry impact, include specific use cases or applications mentioned
-    - When the transcript discusses ethical considerations or safety measures, include these important aspects
-    - If the transcript lacks certain technical details, focus on what IS mentioned rather than what's missing
-    - Ensure your summary is COMPREHENSIVE (3-5 paragraphs) and the key points are SPECIFIC (7-12 points)
+    - FOCUS ON THE ACTUAL CONTENT: Never make up details that aren't in the transcript
+    - BE SPECIFIC: Include exact names, versions, and technical terminology as mentioned
+    - CAPTURE ANNOUNCEMENTS: Highlight any new product launches, services, or major updates
+    - EXTRACT NUMBERS: Include all quantitative information (parameters, benchmarks, metrics, dates)
+    - MENTION COMPARISONS: Note how models compare to competitors or previous versions
+    - PRIORITIZE SIGNIFICANCE: Emphasize what the speaker highlights as important
+    - BE COMPREHENSIVE: Your summary should be 3-5 rich paragraphs with 8-12 detailed key points
+    - DON'T SPECULATE: If specific details aren't provided, don't assume them
     
-    BAD EXAMPLE (too vague): "The video discusses large language models with improved capabilities."
-    GOOD EXAMPLE (specific): "The video explains how Meta's Llama 4 improves upon previous models through architectural changes, enhanced training methods, and better fine-tuning, resulting in improved reasoning capabilities and reduced hallucination rates."
+    BAD EXAMPLE: "The video discusses a large language model with improved capabilities."
+    GOOD EXAMPLE: "The video announces Meta's Llama 4, highlighting its improved reasoning capabilities, reduced hallucination rates, and expanded context window length, though specific parameter sizes weren't disclosed."
+    
+    BAD EXAMPLE: "The model has 1 trillion parameters and was trained on 10 trillion tokens."
+    GOOD EXAMPLE: "While specific parameter counts weren't mentioned, the presenter emphasized that the model size was optimized for efficiency rather than scale."
     
     Your analysis should be extremely detailed and technically precise, suitable for AI researchers and engineers.
   `
