@@ -43,7 +43,6 @@ This document outlines the organization and structure of the YoutubeScribe proje
 ├── shared/                   # Shared code between frontend and backend
 │   └── schema.ts             # Database schema and type definitions
 ├── .gitignore                # Git ignore configuration
-├── .replit                   # Replit configuration
 ├── drizzle.config.ts         # Drizzle ORM configuration
 ├── package.json              # Node.js dependencies and scripts
 ├── postcss.config.js         # PostCSS configuration for CSS processing
@@ -91,8 +90,28 @@ Defines all API endpoints exposed by the backend server.
 ### `client/src/App.tsx`
 Main frontend component with routing definitions for all pages.
 
+### `client/src/components/interactive-transcript.tsx`
+Provides the interactive transcript highlighting feature that allows users to select and save important parts of the video transcript as key points.
+
 ### `drizzle.config.ts`
 Configuration for Drizzle ORM, specifying database connection and schema location.
+
+## Key Components
+
+### Interactive Transcript Components
+The application includes specialized components for transcript interaction:
+
+1. **InteractiveTranscript**: The base component that renders a transcript with text selection capabilities 
+   - Manages text selection state
+   - Formats transcript into readable paragraphs
+   - Provides a floating "Add" button when text is selected
+   - Handles both mouse and touch events for cross-device compatibility
+
+2. **TranscriptHighlighter**: Wraps InteractiveTranscript and integrates it with summary data
+   - Manages expand/collapse state of the transcript display
+   - Provides compact and full view modes for better readability
+   - Persists highlighted text to the database via the updateSummary API
+   - Updates the UI optimistically for a responsive user experience
 
 ## Architecture Overview
 

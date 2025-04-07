@@ -62,7 +62,30 @@ After a summary is generated, you can:
 - Change the summary style using different prompt templates
 - Add custom screenshots at specific timestamps
 - Extract glossary terms from technical content
+- Highlight and add text from the transcript to the key points
 - Export the summary in various formats
+
+### Interactive Transcript Highlighting
+
+The interactive transcript feature allows you to enhance your summaries by selecting important parts of the transcript and adding them to the key points:
+
+1. Open a summary from your history
+2. Scroll to the Interactive Transcript section
+3. Click "Show Transcript" to display the transcript content
+4. (Optional) Toggle between "Compact View" and "Full View" for your reading preference
+5. Select any text by highlighting it with your mouse or finger (on touch devices)
+6. Click the "Add" button that appears near your selection
+7. The highlighted text will be added to the Key Points section and saved automatically
+
+**View Modes:**
+- **Compact View**: Default view that fits within the summary container
+- **Full View**: Expanded view with better readability for longer sessions
+
+**Tips for Effective Highlighting:**
+- Highlight concise, specific points rather than long paragraphs
+- Focus on facts, figures, and direct quotes that support the summary
+- Use this feature to capture details that the AI summary might have missed
+- Works on both desktop and mobile devices—just select text and tap "Add"
 
 ### Adding Screenshots
 

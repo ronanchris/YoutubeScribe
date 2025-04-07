@@ -109,6 +109,22 @@ All prompt templates generate output in a consistent JSON format:
 }
 ```
 
+## Enhancing Summaries with Interactive Transcript
+
+After generating a summary, you can further enhance it by using the interactive transcript feature to add specific quotes or details:
+
+1. Use the prompt template that best fits your overall needs
+2. Review the generated summary and key points
+3. Open the Interactive Transcript section to access the full video transcript
+4. Highlight and add important quotes, statistics, or details that the AI may have missed
+5. These user-selected highlights will be added to the Key Points section
+
+**Benefits of combining AI summaries with manual highlighting:**
+- Ensures critical details are never missed
+- Adds exact quotes when precision matters
+- Customizes the summary based on your specific interests
+- Creates a more personalized and accurate summary
+
 ## Regenerating Summaries
 
 Users can regenerate summaries using different templates without fetching the transcript again, allowing experimentation with different summary styles without additional API costs.
@@ -124,6 +140,7 @@ The prompt templates are defined in `server/services/openai.ts` and are accessib
 3. **For AI videos**: Use the technical_ai template to extract specific model details and technical aspects.
 4. **For business content**: The business template will emphasize actionable insights and strategic implications.
 5. **For academic content**: The academic template provides proper scholarly framing and theoretical analysis.
+6. **Enhance with manual highlighting**: Use the interactive transcript to add specific quotes or exact figures that are important to you.
 
 ## Template Customization
 

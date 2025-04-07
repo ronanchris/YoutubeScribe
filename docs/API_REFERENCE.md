@@ -19,6 +19,7 @@ The following functions are available in `client/src/lib/api.ts` and can be used
 | `regenerateSummary` | Regenerate a summary with a different prompt | `summaryId: number, promptType: string` | Updated summary with screenshots |
 | `fetchTranscriptForSummary` | Fetch transcript for a summary | `summaryId: number` | Updated summary with transcript |
 | `addCustomScreenshot` | Add a custom screenshot to a summary | `summaryId: number, timestamp: number, description?: string, svgContent?: string` | Created screenshot |
+| `updateSummary` | Update a summary's properties | `summaryId: number, updates: Partial<Summary>` | Updated summary with screenshots |
 
 ### User Management
 
@@ -62,6 +63,7 @@ The following endpoints are available in the backend server (`server/routes.ts`)
 | `/api/summaries` | GET | Get all summaries (admin) or user's summaries | None | Array of summaries |
 | `/api/summaries` | POST | Create a new summary | `{ youtubeUrl }` | Created summary |
 | `/api/summaries/:id` | GET | Get a summary by ID | None | Summary with screenshots |
+| `/api/summaries/:id` | PATCH | Update summary properties | `{ keyPoints?, summary?, structuredOutline?, etc. }` | Updated summary |
 | `/api/summaries/:id` | DELETE | Delete a summary | None | Success message |
 | `/api/summaries/:id/regenerate` | POST | Regenerate a summary | `{ promptType }` | Updated summary |
 | `/api/summaries/:id/fetch-transcript` | POST | Fetch transcript for a summary | None | Updated summary |
@@ -84,6 +86,20 @@ The following endpoints are available in the backend server (`server/routes.ts`)
 | Endpoint | Method | Description | Request Body | Response |
 |----------|--------|-------------|-------------|----------|
 | `/api/extract-terms` | POST | Extract key terms from text | `{ text }` | Array of terms |
+
+## Interactive Transcript Highlighting Implementation
+
+The interactive transcript feature leverages the summary update endpoint to persist user-selected transcript highlights:
+
+1. **Client-side implementation**:
+   - The `TranscriptHighlighter` component (`client/src/components/interactive-transcript.tsx`) allows users to select text from the transcript
+   - When a user adds a highlight, the component calls `updateSummary(summaryId, { keyPoints: [...existingPoints, newHighlight] })`
+   - The component performs an optimistic update first, then persists the change to the database
+
+2. **Server-side implementation**:
+   - The PATCH endpoint at `/api/summaries/:id` handles updates to the summary properties
+   - The endpoint validates the user has permission to update the summary
+   - The storage layer's `updateSummary` method persists the changes to the database
 
 ## Error Handling
 
